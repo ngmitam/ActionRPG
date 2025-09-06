@@ -21,7 +21,10 @@
 		}
 	},
 	"extensions": {
-		"recommendations": ["ms-vscode.cpptools", "ms-dotnettools.csharp"]
+		"recommendations": [
+			"ms-vscode.cpptools",
+			"ms-dotnettools.csharp"
+		]
 	},
 	"tasks": {
 		"version": "2.0.0",
@@ -55,7 +58,9 @@
 					"-waitmutex"
 				],
 				"problemMatcher": "$msCompile",
-				"dependsOn": ["ActionRPG Win64 Debug Clean"],
+				"dependsOn": [
+					"ActionRPG Win64 Debug Clean"
+				],
 				"type": "shell",
 				"options": {
 					"cwd": "C:\\Program Files\\Epic Games\\UE_5.6"
@@ -107,7 +112,9 @@
 					"-waitmutex"
 				],
 				"problemMatcher": "$msCompile",
-				"dependsOn": ["ActionRPG Win64 DebugGame Clean"],
+				"dependsOn": [
+					"ActionRPG Win64 DebugGame Clean"
+				],
 				"type": "shell",
 				"options": {
 					"cwd": "C:\\Program Files\\Epic Games\\UE_5.6"
@@ -132,10 +139,7 @@
 			},
 			{
 				"label": "ActionRPG Win64 Development Build",
-				"group": {
-					"kind": "build",
-					"isDefault": true
-				},
+				"group": "build",
 				"command": "Engine\\Build\\BatchFiles\\Build.bat",
 				"args": [
 					"ActionRPG",
@@ -162,7 +166,9 @@
 					"-waitmutex"
 				],
 				"problemMatcher": "$msCompile",
-				"dependsOn": ["ActionRPG Win64 Development Clean"],
+				"dependsOn": [
+					"ActionRPG Win64 Development Clean"
+				],
 				"type": "shell",
 				"options": {
 					"cwd": "C:\\Program Files\\Epic Games\\UE_5.6"
@@ -214,7 +220,9 @@
 					"-waitmutex"
 				],
 				"problemMatcher": "$msCompile",
-				"dependsOn": ["ActionRPG Win64 Test Clean"],
+				"dependsOn": [
+					"ActionRPG Win64 Test Clean"
+				],
 				"type": "shell",
 				"options": {
 					"cwd": "C:\\Program Files\\Epic Games\\UE_5.6"
@@ -266,7 +274,9 @@
 					"-waitmutex"
 				],
 				"problemMatcher": "$msCompile",
-				"dependsOn": ["ActionRPG Win64 Shipping Clean"],
+				"dependsOn": [
+					"ActionRPG Win64 Shipping Clean"
+				],
 				"type": "shell",
 				"options": {
 					"cwd": "C:\\Program Files\\Epic Games\\UE_5.6"
@@ -318,7 +328,9 @@
 					"-waitmutex"
 				],
 				"problemMatcher": "$msCompile",
-				"dependsOn": ["ActionRPGEditor Win64 Debug Clean"],
+				"dependsOn": [
+					"ActionRPGEditor Win64 Debug Clean"
+				],
 				"type": "shell",
 				"options": {
 					"cwd": "C:\\Program Files\\Epic Games\\UE_5.6"
@@ -370,7 +382,9 @@
 					"-waitmutex"
 				],
 				"problemMatcher": "$msCompile",
-				"dependsOn": ["ActionRPGEditor Win64 DebugGame Clean"],
+				"dependsOn": [
+					"ActionRPGEditor Win64 DebugGame Clean"
+				],
 				"type": "shell",
 				"options": {
 					"cwd": "C:\\Program Files\\Epic Games\\UE_5.6"
@@ -422,7 +436,9 @@
 					"-waitmutex"
 				],
 				"problemMatcher": "$msCompile",
-				"dependsOn": ["ActionRPGEditor Win64 Development Clean"],
+				"dependsOn": [
+					"ActionRPGEditor Win64 Development Clean"
+				],
 				"type": "shell",
 				"options": {
 					"cwd": "C:\\Program Files\\Epic Games\\UE_5.6"
@@ -455,7 +471,8 @@
 				"request": "launch",
 				"program": "C:\\Users\\Admin\\Documents\\Unreal Projects\\ActionRPG\\Binaries\\Win64\\UnrealGame-Win64-Debug.exe",
 				"preLaunchTask": "ActionRPG Win64 Debug Build",
-				"args": [],
+				"args": [
+				],
 				"cwd": "C:\\Program Files\\Epic Games\\UE_5.6",
 				"stopAtEntry": false,
 				"console": "integratedTerminal",
@@ -472,7 +489,8 @@
 				"request": "launch",
 				"program": "C:\\Users\\Admin\\Documents\\Unreal Projects\\ActionRPG\\Binaries\\Win64\\UnrealGame-Win64-DebugGame.exe",
 				"preLaunchTask": "ActionRPG Win64 DebugGame Build",
-				"args": [],
+				"args": [
+				],
 				"cwd": "C:\\Program Files\\Epic Games\\UE_5.6",
 				"stopAtEntry": false,
 				"console": "integratedTerminal",
@@ -489,7 +507,8 @@
 				"request": "launch",
 				"program": "C:\\Users\\Admin\\Documents\\Unreal Projects\\ActionRPG\\Binaries\\Win64\\UnrealGame.exe",
 				"preLaunchTask": "ActionRPG Win64 Development Build",
-				"args": [],
+				"args": [
+				],
 				"cwd": "C:\\Program Files\\Epic Games\\UE_5.6",
 				"stopAtEntry": false,
 				"console": "integratedTerminal",
@@ -506,7 +525,8 @@
 				"request": "launch",
 				"program": "C:\\Users\\Admin\\Documents\\Unreal Projects\\ActionRPG\\Binaries\\Win64\\UnrealGame-Win64-Test.exe",
 				"preLaunchTask": "ActionRPG Win64 Test Build",
-				"args": [],
+				"args": [
+				],
 				"cwd": "C:\\Program Files\\Epic Games\\UE_5.6",
 				"stopAtEntry": false,
 				"console": "integratedTerminal",
@@ -523,7 +543,8 @@
 				"request": "launch",
 				"program": "C:\\Users\\Admin\\Documents\\Unreal Projects\\ActionRPG\\Binaries\\Win64\\UnrealGame-Win64-Shipping.exe",
 				"preLaunchTask": "ActionRPG Win64 Shipping Build",
-				"args": [],
+				"args": [
+				],
 				"cwd": "C:\\Program Files\\Epic Games\\UE_5.6",
 				"stopAtEntry": false,
 				"console": "integratedTerminal",
