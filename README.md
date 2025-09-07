@@ -10,7 +10,9 @@ Before you begin, ensure you have the following installed and set up:
 
 -   **Unreal Engine 5:** This project is developed for UE5 (preferably version 5.x). You can download it via the [Epic Games Launcher](https://www.unrealengine.com/en-US/download).
 -   **Git:** Required for cloning the repository.
--   **KoreanTraditionalMartialArts Asset Pack:** This project has a required dependency on this asset pack. See the installation instructions below for how to add it to the project.
+-   **Required Asset Packs:** This project has required dependencies on the following asset packs. See the installation instructions below for how to add them to the project.
+    -   **KoreanTraditionalMartialArts**
+    -   **FreeAnimationLibrary**
 
 ## Installation
 
@@ -24,20 +26,22 @@ Follow these steps to get the project up and running on your local machine.
     cd ActionRPG
     ```
 
-2.  **Install the Asset Pack Dependency**
-    The **KoreanTraditionalMartialArts** asset pack is a required dependency. You must add it to the project through the Epic Games Launcher.
+2.  **Install Required Asset Packs**
+    The **KoreanTraditionalMartialArts** and **FreeAnimationLibrary** asset packs are required dependencies. You must add them to the project through the Epic Games Launcher.
 
     a. Open the **Epic Games Launcher**.
 
     b. Navigate to the **Marketplace / Fab** tab.
 
-    c. Search for "**KoreanTraditionalMartialArts**" and acquire it.
+    c. Search for and acquire each of the following packs: - `KoreanTraditionalMartialArts` - `FreeAnimationLibrary`
 
     d. Go to your **Library** (Vault) section within the launcher.
 
-    e. Find the asset pack and click "**Add to Project**".
+    e. Find an asset pack and click "**Add to Project**".
 
     f. A new window will appear showing your compatible Unreal Engine projects. Select your cloned `ActionRPG` project from the list and confirm. The launcher will now copy the asset files directly into the project's `Content` directory.
+
+    > **Important:** You must repeat this "Add to Project" process for **both** required asset packs.
 
 3.  **Open the Project**
     Navigate to the project directory where you cloned the repository and open the `ActionRPG.uproject` file. This will launch the project in the Unreal Editor.
