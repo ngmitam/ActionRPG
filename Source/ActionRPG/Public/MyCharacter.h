@@ -88,4 +88,11 @@ protected:
     // handle callback Attribute changes
     virtual void onAttributeChange(const FOnAttributeChangeData &Data);
     void onStaminaChange(const FOnAttributeChangeData &Data);
+
+    // Public getter for sprint status, used by Animation Blueprint
+    UFUNCTION(BlueprintPure, Category = "Character State")
+    bool IsSprinting() const { return bIsSprinting; }
+
+private:
+    bool bIsSprinting = false;
 };

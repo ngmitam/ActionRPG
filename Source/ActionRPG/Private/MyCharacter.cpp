@@ -162,6 +162,7 @@ void AMyCharacter::StartSprint()
 {
     if (AbilitySystemComponent)
     {
+        bIsSprinting = true;
         AbilitySystemComponent->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Sprint));
     }
 }
@@ -173,6 +174,7 @@ void AMyCharacter::StopSprint()
         FGameplayTagContainer SprintAbilityTagContainer;
         SprintAbilityTagContainer.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Sprint")));
         AbilitySystemComponent->CancelAbilities(&SprintAbilityTagContainer);
+        bIsSprinting = false;
     }
 }
 
