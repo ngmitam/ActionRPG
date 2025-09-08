@@ -50,4 +50,12 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes | Damage")
 	FGameplayAttributeData BaseDamage;
 	ATTRIBUTE_ACCESSORS(UMyAttributeSet, BaseDamage);
+
+	// Current Walk Speed
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes | Movement", ReplicatedUsing = OnRep_MaxWalkSpeed)
+	FGameplayAttributeData MaxWalkSpeed;
+	ATTRIBUTE_ACCESSORS(UMyAttributeSet, MaxWalkSpeed);
+
+	UFUNCTION()
+	void OnRep_MaxWalkSpeed(const FGameplayAttributeData &OldMaxWalkSpeed);
 };

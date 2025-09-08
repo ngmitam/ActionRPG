@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "AbilitySystemInterface.h"
+#include "GameplayEffectTypes.h"
+#include "MyAbilityTypes.h"
 #include "MyCharacter.generated.h"
 
 class USpringArmComponent;
@@ -75,11 +77,15 @@ protected:
     UMyAttributeSet *AttributeSet;
 
     UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Abilities")
-    TSubclassOf<UGameplayEffect> DefaultAttributeEffect;
+    TArray<TSubclassOf<UGameplayEffect>> DefaultAttributeEffects;
 
     UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Abilities")
     TArray<TSubclassOf<UMyGameplayAbility>> DefaultAbilities;
 
     void InitializeAttributes();
     void GiveDefaultAbilities();
+
+    // handle callback Attribute changes
+    virtual void onAttributeChange(const FOnAttributeChangeData &Data);
+    void onStaminaChange(const FOnAttributeChangeData &Data);
 };

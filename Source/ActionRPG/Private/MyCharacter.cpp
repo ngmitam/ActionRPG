@@ -67,6 +67,14 @@ void AMyCharacter::PossessedBy(AController *NewController)
 
         InitializeAttributes();
         GiveDefaultAbilities();
+
+        // Subscribe to attribute change callbacks
+        if (AttributeSet)
+        {
+            AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetStaminaAttribute()).AddUObject(this, &AMyCharacter::onAttributeChange);
+            AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetMaxWalkSpeedAttribute()).AddUObject(this, &AMyCharacter::onAttributeChange);
+            GetCharacterMovement()->MaxWalkSpeed = AttributeSet->GetMaxWalkSpeed();
+        }
     }
 }
 
@@ -78,6 +86,13 @@ void AMyCharacter::OnRep_PlayerState()
     if (AbilitySystemComponent)
     {
         AbilitySystemComponent->InitAbilityActorInfo(this, this);
+
+        // Subscribe to attribute change callbacks on client
+        if (AttributeSet)
+        {
+            AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetStaminaAttribute()).AddUObject(this, &AMyCharacter::onAttributeChange);
+            AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetMaxWalkSpeedAttribute()).AddUObject(this, &AMyCharacter::onAttributeChange);
+        }
     }
 }
 
@@ -145,29 +160,40 @@ void AMyCharacter::Look(const FInputActionValue &Value)
 
 void AMyCharacter::StartSprint()
 {
-    GetCharacterMovement()->MaxWalkSpeed = 600.0f;
+    if (AbilitySystemComponent)
+    {
+        AbilitySystemComponent->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Sprint));
+    }
 }
 
 void AMyCharacter::StopSprint()
 {
-    GetCharacterMovement()->MaxWalkSpeed = 300.0f;
+    if (AbilitySystemComponent)
+    {
+        FGameplayTagContainer SprintAbilityTagContainer;
+        SprintAbilityTagContainer.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Sprint")));
+        AbilitySystemComponent->CancelAbilities(&SprintAbilityTagContainer);
+    }
 }
 
 void AMyCharacter::InitializeAttributes()
 {
-    if (!AbilitySystemComponent || !DefaultAttributeEffect)
+    if (!AbilitySystemComponent)
     {
         return;
     }
 
-    FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
-    EffectContext.AddSourceObject(this);
-
-    FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(DefaultAttributeEffect, 1, EffectContext);
-
-    if (SpecHandle.IsValid())
+    for (TSubclassOf<UGameplayEffect> DefaultAttributeEffect : DefaultAttributeEffects)
     {
-        AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+        if (!DefaultAttributeEffect)
+        {
+            continue;
+        }
+        FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(DefaultAttributeEffect, 1.0f, FGameplayEffectContextHandle());
+        if (SpecHandle.IsValid())
+        {
+            AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), AbilitySystemComponent);
+        }
     }
 }
 
@@ -176,5 +202,34 @@ void AMyCharacter::GiveDefaultAbilities()
     if (!AbilitySystemComponent || !HasAuthority())
     {
         return;
+    }
+    for (TSubclassOf<UMyGameplayAbility> Ability : DefaultAbilities)
+    {
+        AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(Ability, 1, static_cast<int32>(Ability.GetDefaultObject()->AbilityInputID), this));
+    }
+}
+
+void AMyCharacter::onAttributeChange(const FOnAttributeChangeData &Data)
+{
+    if (Data.Attribute == AttributeSet->GetMaxWalkSpeedAttribute())
+    {
+        GetCharacterMovement()->MaxWalkSpeed = Data.NewValue;
+    }
+    else if (Data.Attribute == AttributeSet->GetStaminaAttribute())
+    {
+        onStaminaChange(Data);
+    }
+    else if (Data.Attribute == AttributeSet->GetHealthAttribute())
+    {
+        // Handle health changes if needed, e.g., update UI or trigger events
+    }
+}
+
+void AMyCharacter::onStaminaChange(const FOnAttributeChangeData &Data)
+{
+    if (Data.NewValue <= 0.0f && AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("State.Sprinting"))))
+    {
+        // Out of stamina, stop sprinting
+        StopSprint();
     }
 }
