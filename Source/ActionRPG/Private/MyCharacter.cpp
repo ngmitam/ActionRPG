@@ -125,7 +125,7 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent *PlayerInputCompone
         EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMyCharacter::Look);
         EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AMyCharacter::StartSprint);
         EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AMyCharacter::StopSprint);
-        EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+        EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AMyCharacter::Jump);
         EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
     }
 }
@@ -176,6 +176,32 @@ void AMyCharacter::StopSprint()
         AbilitySystemComponent->CancelAbilities(&SprintAbilityTagContainer);
         bIsSprinting = false;
     }
+}
+
+void AMyCharacter::Jump()
+{
+    Super::Jump();
+
+    if (AbilitySystemComponent)
+    {
+        AbilitySystemComponent->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Jump));
+    }
+}
+
+void AMyCharacter::StopJumping()
+{
+    if (AbilitySystemComponent)
+    {
+        FGameplayTagContainer JumpAbilityTagContainer;
+        JumpAbilityTagContainer.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Jump")));
+        AbilitySystemComponent->CancelAbilities(&JumpAbilityTagContainer);
+    }
+}
+
+void AMyCharacter::Landed(const FHitResult &Hit)
+{
+    Super::Landed(Hit);
+    StopJumping();
 }
 
 void AMyCharacter::InitializeAttributes()
@@ -231,7 +257,8 @@ void AMyCharacter::onStaminaChange(const FOnAttributeChangeData &Data)
 {
     if (Data.NewValue <= 0.0f && AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("State.Sprinting"))))
     {
-        // Out of stamina, stop sprinting
+        // Out of stamina
         StopSprint();
+        StopJumping();
     }
 }

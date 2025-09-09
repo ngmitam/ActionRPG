@@ -8,6 +8,9 @@
 #include "AbilitySystemInterface.h"
 #include "GameplayEffectTypes.h"
 #include "MyAbilityTypes.h"
+#include "MyAbilitySystemComponent.h"
+#include "MyAttributeSet.h"
+#include "MyGameplayAbility.h"
 #include "MyCharacter.generated.h"
 
 class USpringArmComponent;
@@ -39,6 +42,8 @@ protected:
 
     virtual void OnRep_PlayerState() override;
 
+    virtual void Landed(const FHitResult &Hit) override;
+
     // COMPONENTS
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
     USpringArmComponent *SpringArmComponent;
@@ -67,6 +72,8 @@ protected:
     void Look(const FInputActionValue &Value);
     void StartSprint();
     void StopSprint();
+    void Jump();
+    void StopJumping();
 
     // --- Gameplay Ability System ---
 

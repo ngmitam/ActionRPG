@@ -8,5 +8,6 @@ UENUM(BlueprintType)
 enum class EMyAbilityInputID : uint8
 {
 	None UMETA(DisplayName = "None"),
-	Sprint UMETA(DisplayName = "Sprint")
+	Sprint UMETA(DisplayName = "Sprint"),
+	Jump UMETA(DisplayName = "Jump")
 };

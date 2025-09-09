@@ -2,21 +2,26 @@
 
 #include "MyGameplayAbility.h"
 #include "AbilitySystemComponent.h"
+#include "GameplayEffectTypes.h"
 
 // Apply a buff effect when the ability is activated
 void UMyGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo *ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData *TriggerEventData)
 {
+
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (BuffEffect && ActorInfo->OwnerActor.IsValid())
-    {
-        FGameplayEffectContextHandle EffectContext = ActorInfo->AbilitySystemComponent->MakeEffectContext();
-        EffectContext.AddSourceObject(this);
+    // Commit the ability
+    CommitAbility(Handle, ActorInfo, ActivationInfo);
 
-        FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(BuffEffect, GetAbilityLevel(Handle, ActorInfo));
-        if (SpecHandle.IsValid())
+    if (BuffEffect.Num() > 0 && ActorInfo->OwnerActor.IsValid())
+    {
+        for (const TSubclassOf<UGameplayEffect> &Effect : BuffEffect)
         {
-            BuffHandle = ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, SpecHandle);
+            if (Effect)
+            {
+                FActiveGameplayEffectHandle BuffHandleTemp = ApplyGameplayEffectToOwner(Handle, ActorInfo, ActivationInfo, Effect.GetDefaultObject(), GetAbilityLevel(Handle, ActorInfo));
+                BuffHandle.Add(BuffHandleTemp);
+            }
         }
     }
 }
@@ -26,13 +31,17 @@ void UMyGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 {
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 
-    if (BuffHandle.IsValid() && ActorInfo->OwnerActor.IsValid())
+    for (FActiveGameplayEffectHandle &ActiveHandle : BuffHandle)
     {
-        UAbilitySystemComponent *AbilitySystem = ActorInfo->AbilitySystemComponent.Get();
-        if (AbilitySystem)
+        if (ActiveHandle.IsValid() && ActorInfo->OwnerActor.IsValid())
         {
-            AbilitySystem->RemoveActiveGameplayEffect(BuffHandle);
-            BuffHandle.Invalidate();
+            UAbilitySystemComponent *AbilitySystem = ActorInfo->AbilitySystemComponent.Get();
+            if (AbilitySystem)
+            {
+                AbilitySystem->RemoveActiveGameplayEffect(ActiveHandle);
+                ActiveHandle.Invalidate();
+            }
         }
     }
+    BuffHandle.Empty();
 }
