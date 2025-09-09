@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbility.h"
 #include "MyAbilityTypes.h"
+#include "GameplayEffectTypes.h"
 #include "MyGameplayAbility.generated.h"
 
 UCLASS()
@@ -16,4 +17,14 @@ public:
 	// Ability Input ID
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ability")
 	EMyAbilityInputID AbilityInputID = EMyAbilityInputID::None;
+
+	// Buff Effect
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Buff")
+	TSubclassOf<class UGameplayEffect> BuffEffect;
+
+	void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo *ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData *TriggerEventData);
+	void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo *ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled);
+
+private:
+	FActiveGameplayEffectHandle BuffHandle;
 };
