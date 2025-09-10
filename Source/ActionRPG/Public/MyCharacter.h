@@ -5,32 +5,27 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
-#include "AbilitySystemInterface.h"
-#include "GameplayEffectTypes.h"
+#include "AbilitySystemComponent.h"
 #include "MyAbilityTypes.h"
-#include "MyAbilitySystemComponent.h"
-#include "MyAttributeSet.h"
-#include "MyGameplayAbility.h"
+#include "MyAttributeComponent.h"
 #include "MyCharacter.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
-class UMyAbilitySystemComponent;
-class UMyAttributeSet;
-class UGameplayEffect;
-class UMyGameplayAbility;
+class UMyAttributeComponent;
 
 UCLASS()
-class ACTIONRPG_API AMyCharacter : public ACharacter, public IAbilitySystemInterface
+class ACTIONRPG_API AMyCharacter : public ACharacter
 {
     GENERATED_BODY()
 public:
     AMyCharacter();
 
-    // Implement IAbilitySystemInterface
-    virtual UAbilitySystemComponent *GetAbilitySystemComponent() const override;
+    // Get the ability system component from the AttributeComponent
+    UFUNCTION(BlueprintPure, Category = "Abilities")
+    UAbilitySystemComponent *GetAbilitySystem() const { return AttributeComponent ? AttributeComponent->GetAbilitySystemComponent() : nullptr; }
 
     virtual void Tick(float DeltaTime) override;
     virtual void SetupPlayerInputComponent(class UInputComponent *PlayerInputComponent) override;
@@ -75,31 +70,13 @@ protected:
     void Jump();
     void StopJumping();
 
-    // --- Gameplay Ability System ---
+    UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Attributes")
+    TSubclassOf<UMyAttributeComponent> AttributeComponentClass;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
-    UMyAbilitySystemComponent *AbilitySystemComponent;
-
-    UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
-    UMyAttributeSet *AttributeSet;
-
-    UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Abilities")
-    TArray<TSubclassOf<UGameplayEffect>> DefaultAttributeEffects;
-
-    UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Abilities")
-    TArray<TSubclassOf<UMyGameplayAbility>> DefaultAbilities;
-
-    void InitializeAttributes();
-    void GiveDefaultAbilities();
-
-    // handle callback Attribute changes
-    virtual void onAttributeChange(const FOnAttributeChangeData &Data);
-    void onStaminaChange(const FOnAttributeChangeData &Data);
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attributes")
+    UMyAttributeComponent *AttributeComponent;
 
     // Public getter for sprint status, used by Animation Blueprint
     UFUNCTION(BlueprintPure, Category = "Character State")
-    bool IsSprinting() const { return bIsSprinting; }
-
-private:
-    bool bIsSprinting = false;
+    bool IsSprinting() const { return AttributeComponent ? AttributeComponent->IsSprinting() : false; }
 };

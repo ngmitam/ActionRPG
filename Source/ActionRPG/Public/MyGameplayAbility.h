@@ -18,9 +18,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ability")
 	EMyAbilityInputID AbilityInputID = EMyAbilityInputID::None;
 
-	// Buff Effect
+	// Buff effect classes
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Buff")
-	TArray<TSubclassOf<class UGameplayEffect>> BuffEffect;
+	TArray<TSubclassOf<class UGameplayEffect>> BuffEffectClasses;
 
 	void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo *ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData *TriggerEventData);
 	void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo *ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled);

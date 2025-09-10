@@ -1,0 +1,86 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "AbilitySystemInterface.h"
+#include "GameplayEffectTypes.h"
+#include "MyAbilityTypes.h"
+#include "MyAbilitySystemComponent.h"
+#include "MyAttributeSet.h"
+#include "MyGameplayAbility.h"
+#include "MyAttributeComponent.generated.h"
+
+class UMyAbilitySystemComponent;
+class UMyAttributeSet;
+class UGameplayEffect;
+class UMyGameplayAbility;
+
+UCLASS()
+class ACTIONRPG_API UMyAttributeComponent : public UActorComponent, public IAbilitySystemInterface
+{
+    GENERATED_BODY()
+
+public:
+    UMyAttributeComponent();
+
+    // Implement IAbilitySystemInterface
+    virtual UAbilitySystemComponent *GetAbilitySystemComponent() const override;
+
+    virtual void BeginPlay() override;
+
+    // Initialize attributes and abilities
+    void InitializeAttributes();
+    void GiveDefaultAbilities();
+
+    // Attribute accessors
+    UFUNCTION(BlueprintPure, Category = "Attributes")
+    float GetHealth() const;
+
+    UFUNCTION(BlueprintPure, Category = "Attributes")
+    float GetMaxHealth() const;
+
+    UFUNCTION(BlueprintPure, Category = "Attributes")
+    float GetStamina() const;
+
+    UFUNCTION(BlueprintPure, Category = "Attributes")
+    float GetMaxStamina() const;
+
+    UFUNCTION(BlueprintPure, Category = "Attributes")
+    float GetBaseDamage() const;
+
+    UFUNCTION(BlueprintPure, Category = "Attributes")
+    float GetMaxWalkSpeed() const;
+
+    // Public getter for sprint status
+    UFUNCTION(BlueprintPure, Category = "Character State")
+    bool IsSprinting() const { return bIsSprinting; }
+
+    // Set sprint status (called by abilities)
+    void SetSprinting(bool bSprinting) { bIsSprinting = bSprinting; }
+
+protected:
+    // Ability System Component
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
+    UMyAbilitySystemComponent *AbilitySystemComponent;
+
+    // Attribute Set
+    UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
+    UMyAttributeSet *AttributeSet;
+
+    // Default attribute effect classes
+    UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Abilities")
+    TArray<TSubclassOf<UGameplayEffect>> DefaultAttributeEffectClasses;
+
+    // Default ability classes
+    UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Abilities")
+    TArray<TSubclassOf<UMyGameplayAbility>> DefaultAbilityClasses;
+
+    // Handle attribute changes
+    virtual void OnAttributeChange(const FOnAttributeChangeData &Data);
+    void OnStaminaChange(const FOnAttributeChangeData &Data);
+
+private:
+    bool bIsSprinting = false;
+};

@@ -13,9 +13,9 @@ void UMyGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
     // Commit the ability
     CommitAbility(Handle, ActorInfo, ActivationInfo);
 
-    if (BuffEffect.Num() > 0 && ActorInfo->OwnerActor.IsValid())
+    if (BuffEffectClasses.Num() > 0 && ActorInfo->OwnerActor.IsValid())
     {
-        for (const TSubclassOf<UGameplayEffect> &Effect : BuffEffect)
+        for (const TSubclassOf<UGameplayEffect> &Effect : BuffEffectClasses)
         {
             if (Effect)
             {
