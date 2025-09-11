@@ -7,6 +7,8 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "MyAttributeComponent.h"
+#include "MyPlayerUI.h"
+#include "Blueprint/UserWidget.h"
 
 AMyCharacter::AMyCharacter()
 {
@@ -38,6 +40,9 @@ AMyCharacter::AMyCharacter()
     CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
     CameraComponent->SetupAttachment(SpringArmComponent, USpringArmComponent::SocketName);
     CameraComponent->bUsePawnControlRotation = false;
+
+    // Attribute Component class set in Blueprint
+    // Note: Component creation moved to BeginPlay() for proper initialization timing
 }
 
 void AMyCharacter::PossessedBy(AController *NewController)
@@ -55,12 +60,35 @@ void AMyCharacter::BeginPlay()
     Super::BeginPlay();
 
     // Spawn the AttributeComponent from the selected class
-    if (AttributeComponentClass && !AttributeComponent)
+    if (AttributeComponentClass)
     {
-        AttributeComponent = NewObject<UMyAttributeComponent>(this, AttributeComponentClass);
-        if (AttributeComponent)
+
+        if (!AttributeComponent)
         {
-            AttributeComponent->RegisterComponent();
+            // Create AttributeComponent with this character as the owner
+            AttributeComponent = NewObject<UMyAttributeComponent>(this, AttributeComponentClass);
+            if (AttributeComponent)
+            {
+                // Register the component with the character as owner
+                AttributeComponent->RegisterComponent();
+            }
+        }
+    }
+
+    // Create and display the Player Controller
+    if (APlayerController *PlayerController = Cast<APlayerController>(Controller))
+    {
+        if (PlayerUIClass)
+        {
+            if (UUserWidget *Widget = CreateWidget<UUserWidget>(PlayerController, PlayerUIClass))
+            {
+                PlayerUIWidget = Cast<UMyPlayerUI>(Widget);
+                if (PlayerUIWidget)
+                {
+                    PlayerUIWidget->SetOwningCharacter(this);
+                    PlayerUIWidget->AddToViewport();
+                }
+            }
         }
     }
 
@@ -71,6 +99,19 @@ void AMyCharacter::BeginPlay()
         {
             Subsystem->AddMappingContext(DefaultMappingContext, 0);
         }
+    }
+
+    // Ensure AttributeComponent is ready before proceeding
+    if (!AttributeComponent || !AttributeComponent->GetAbilitySystemComponent() || !AttributeComponent->GetAbilitySystemComponent()->AbilityActorInfo.IsValid())
+    {
+        // Defer input setup if component not ready
+        GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AMyCharacter::SetupPlayerInputDeferred);
+    }
+    else
+    {
+
+        // Setup input immediately if component is ready
+        SetupPlayerInputComponent(GetController()->GetPawn()->InputComponent);
     }
 }
 
@@ -85,6 +126,7 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent *PlayerInputCompone
 
     if (UEnhancedInputComponent *EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
     {
+
         EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMyCharacter::Move);
         EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMyCharacter::Look);
         EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AMyCharacter::StartSprint);
@@ -124,10 +166,19 @@ void AMyCharacter::Look(const FInputActionValue &Value)
 
 void AMyCharacter::StartSprint()
 {
-    if (AttributeComponent)
+
+    if (!AttributeComponent)
     {
-        if (UAbilitySystemComponent *ASC = AttributeComponent->GetAbilitySystemComponent())
+        return;
+    }
+
+    if (UAbilitySystemComponent *ASC = AttributeComponent->GetAbilitySystemComponent())
+    {
+
+        // Check if AbilityActorInfo is valid before proceeding
+        if (ASC->AbilityActorInfo.IsValid())
         {
+
             AttributeComponent->SetSprinting(true);
             ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Sprint));
         }
@@ -136,10 +187,19 @@ void AMyCharacter::StartSprint()
 
 void AMyCharacter::StopSprint()
 {
-    if (AttributeComponent)
+
+    if (!AttributeComponent)
     {
-        if (UAbilitySystemComponent *ASC = AttributeComponent->GetAbilitySystemComponent())
+        return;
+    }
+
+    if (UAbilitySystemComponent *ASC = AttributeComponent->GetAbilitySystemComponent())
+    {
+
+        // Check if AbilityActorInfo is valid before proceeding
+        if (ASC->AbilityActorInfo.IsValid())
         {
+
             FGameplayTagContainer SprintAbilityTagContainer;
             SprintAbilityTagContainer.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Sprint")));
             ASC->CancelAbilities(&SprintAbilityTagContainer);
@@ -152,10 +212,18 @@ void AMyCharacter::Jump()
 {
     Super::Jump();
 
-    if (AttributeComponent)
+    if (!AttributeComponent)
     {
-        if (UAbilitySystemComponent *ASC = AttributeComponent->GetAbilitySystemComponent())
+        return;
+    }
+
+    if (UAbilitySystemComponent *ASC = AttributeComponent->GetAbilitySystemComponent())
+    {
+
+        // Check if AbilityActorInfo is valid before proceeding
+        if (ASC->AbilityActorInfo.IsValid())
         {
+
             ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Jump));
         }
     }
@@ -163,14 +231,43 @@ void AMyCharacter::Jump()
 
 void AMyCharacter::StopJumping()
 {
-    if (AttributeComponent)
+
+    if (!AttributeComponent)
     {
-        if (UAbilitySystemComponent *ASC = AttributeComponent->GetAbilitySystemComponent())
+        return;
+    }
+
+    if (UAbilitySystemComponent *ASC = AttributeComponent->GetAbilitySystemComponent())
+    {
+
+        // Check if AbilityActorInfo is valid before proceeding
+        if (ASC->AbilityActorInfo.IsValid())
         {
+
             FGameplayTagContainer JumpAbilityTagContainer;
             JumpAbilityTagContainer.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Jump")));
             ASC->CancelAbilities(&JumpAbilityTagContainer);
         }
+    }
+}
+
+void AMyCharacter::SetupPlayerInputDeferred()
+{
+
+    // Check if component is now ready
+    if (AttributeComponent && AttributeComponent->GetAbilitySystemComponent() && AttributeComponent->GetAbilitySystemComponent()->AbilityActorInfo.IsValid())
+    {
+
+        // Setup input now that component is ready
+        if (UInputComponent *PlayerInputComp = GetController()->GetPawn()->InputComponent)
+        {
+            SetupPlayerInputComponent(PlayerInputComp);
+        }
+    }
+    else
+    {
+        // Still not ready, try again next frame
+        GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AMyCharacter::SetupPlayerInputDeferred);
     }
 }
 

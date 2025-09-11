@@ -17,7 +17,7 @@ class UMyAttributeSet;
 class UGameplayEffect;
 class UMyGameplayAbility;
 
-UCLASS()
+UCLASS(ClassGroup = (AbilitySystem), meta = (BlueprintSpawnableComponent, Blueprintable, DisplayName = "My Attribute Component", Category = "Ability System", IsBlueprintBase = "true", Keywords = "Attribute Ability System GAS", ShowCategories = "Ability System", HideCategories = "Tags,Activation,Rendering,AssetUserData,Collision", ShowInBlueprintContextMenu = "true"))
 class ACTIONRPG_API UMyAttributeComponent : public UActorComponent, public IAbilitySystemInterface
 {
     GENERATED_BODY()
@@ -29,10 +29,13 @@ public:
     virtual UAbilitySystemComponent *GetAbilitySystemComponent() const override;
 
     virtual void BeginPlay() override;
+    virtual void OnRegister() override;
 
     // Initialize attributes and abilities
     void InitializeAttributes();
     void GiveDefaultAbilities();
+    void InitializeAbilitySystem();
+    void DeferredInitialize();
 
     // Attribute accessors
     UFUNCTION(BlueprintPure, Category = "Attributes")

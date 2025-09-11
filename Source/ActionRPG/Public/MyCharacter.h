@@ -8,6 +8,7 @@
 #include "AbilitySystemComponent.h"
 #include "MyAbilityTypes.h"
 #include "MyAttributeComponent.h"
+#include "MyPlayerUI.h"
 #include "MyCharacter.generated.h"
 
 class USpringArmComponent;
@@ -27,8 +28,16 @@ public:
     UFUNCTION(BlueprintPure, Category = "Abilities")
     UAbilitySystemComponent *GetAbilitySystem() const { return AttributeComponent ? AttributeComponent->GetAbilitySystemComponent() : nullptr; }
 
+    // Get the AttributeComponent (for UI access)
+    UFUNCTION(BlueprintPure, Category = "Attributes")
+    UMyAttributeComponent *GetAttributeComponent() const { return AttributeComponent; }
+
     virtual void Tick(float DeltaTime) override;
     virtual void SetupPlayerInputComponent(class UInputComponent *PlayerInputComponent) override;
+
+    // Public getter for sprint status, used by Animation Blueprint
+    UFUNCTION(BlueprintPure, Category = "Character State")
+    bool IsSprinting() const { return AttributeComponent ? AttributeComponent->IsSprinting() : false; }
 
 protected:
     virtual void BeginPlay() override;
@@ -70,13 +79,21 @@ protected:
     void Jump();
     void StopJumping();
 
+    // Deferred input setup
+    void SetupPlayerInputDeferred();
+
     UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Attributes")
     TSubclassOf<UMyAttributeComponent> AttributeComponentClass;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attributes")
+    // Attribute Component
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes")
     UMyAttributeComponent *AttributeComponent;
 
-    // Public getter for sprint status, used by Animation Blueprint
-    UFUNCTION(BlueprintPure, Category = "Character State")
-    bool IsSprinting() const { return AttributeComponent ? AttributeComponent->IsSprinting() : false; }
+    // Player UI Class
+    UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "UI")
+    TSubclassOf<UMyPlayerUI> PlayerUIClass;
+
+    // Player UI Widget
+    UPROPERTY()
+    UMyPlayerUI *PlayerUIWidget;
 };
