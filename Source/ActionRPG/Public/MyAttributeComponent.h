@@ -60,8 +60,15 @@ public:
     UFUNCTION(BlueprintPure, Category = "Character State")
     bool IsSprinting() const { return bIsSprinting; }
 
+    // Public getter for dodge status
+    UFUNCTION(BlueprintPure, Category = "Character State")
+    bool IsDodging() const { return bIsDodging; }
+
     // Set sprint status (called by abilities)
     void SetSprinting(bool bSprinting) { bIsSprinting = bSprinting; }
+
+    // Set dodge status (called by abilities)
+    void SetDodging(bool bDodging) { bIsDodging = bDodging; }
 
 protected:
     // Ability System Component
@@ -86,4 +93,5 @@ protected:
 
 private:
     bool bIsSprinting = false;
+    bool bIsDodging = false;
 };

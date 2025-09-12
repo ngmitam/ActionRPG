@@ -39,6 +39,10 @@ public:
     UFUNCTION(BlueprintPure, Category = "Character State")
     bool IsSprinting() const { return AttributeComponent ? AttributeComponent->IsSprinting() : false; }
 
+    // Public getter for dodge status, used by Animation Blueprint
+    UFUNCTION(BlueprintPure, Category = "Character State")
+    bool IsDodging() const { return AttributeComponent ? AttributeComponent->IsDodging() : false; }
+
 protected:
     virtual void BeginPlay() override;
 
@@ -71,6 +75,9 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
     UInputAction *JumpAction;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+    UInputAction *DodgeAction;
+
     // INPUT HANDLERS
     void Move(const FInputActionValue &Value);
     void Look(const FInputActionValue &Value);
@@ -78,6 +85,7 @@ protected:
     void StopSprint();
     void Jump();
     void StopJumping();
+    void Dodge();
 
     // Deferred input setup
     void SetupPlayerInputDeferred();
@@ -96,4 +104,8 @@ protected:
     // Player UI Widget
     UPROPERTY()
     UMyPlayerUI *PlayerUIWidget;
+
+    // Dodge cooldown time
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dodge")
+    float DodgeCooldown = 1.0f;
 };

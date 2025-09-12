@@ -133,6 +133,7 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent *PlayerInputCompone
         EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AMyCharacter::StopSprint);
         EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AMyCharacter::Jump);
         EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+        EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &AMyCharacter::Dodge);
     }
 }
 
@@ -247,6 +248,42 @@ void AMyCharacter::StopJumping()
             FGameplayTagContainer JumpAbilityTagContainer;
             JumpAbilityTagContainer.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Jump")));
             ASC->CancelAbilities(&JumpAbilityTagContainer);
+        }
+    }
+}
+
+void AMyCharacter::Dodge()
+{
+    // Trigger ability system
+    if (!AttributeComponent)
+    {
+        return;
+    }
+
+    if (UAbilitySystemComponent *ASC = AttributeComponent->GetAbilitySystemComponent())
+    {
+        if (ASC->AbilityActorInfo.IsValid() && !AttributeComponent->IsDodging())
+        {
+            AttributeComponent->SetDodging(true);
+            ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Dodge));
+
+            // Reset dodge status after cooldown and cancel dodge ability
+            FTimerHandle UnusedHandle;
+            GetWorld()->GetTimerManager().SetTimer(
+                UnusedHandle, [this]()
+                {
+                if (AttributeComponent)
+                {
+                    AttributeComponent->SetDodging(false);
+                    if (UAbilitySystemComponent *ASCInner = AttributeComponent->GetAbilitySystemComponent())
+                    {
+                        FGameplayTagContainer DodgeAbilityTagContainer;
+                        DodgeAbilityTagContainer.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Dodge")));
+                        ASCInner->CancelAbilities(&DodgeAbilityTagContainer);
+                    }
+                } },
+                DodgeCooldown,
+                false);
         }
     }
 }
