@@ -9,6 +9,7 @@
 #include "MyAbilityTypes.h"
 #include "MyAttributeComponent.h"
 #include "MyPlayerUI.h"
+#include "MyAttackAbility.h"
 #include "MyCharacter.generated.h"
 
 class USpringArmComponent;
@@ -42,6 +43,14 @@ public:
     // Public getter for dodge status, used by Animation Blueprint
     UFUNCTION(BlueprintPure, Category = "Character State")
     bool IsDodging() const { return AttributeComponent ? AttributeComponent->IsDodging() : false; }
+
+    // Public getter for attack status, used by Animation Blueprint
+    UFUNCTION(BlueprintPure, Category = "Character State")
+    bool IsAttacking() const;
+
+    // Get current combo index, used by Animation Blueprint
+    UFUNCTION(BlueprintPure, Category = "Character State")
+    int32 GetCurrentComboIndex() const;
 
 protected:
     virtual void BeginPlay() override;
@@ -78,6 +87,9 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
     UInputAction *DodgeAction;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+    UInputAction *AttackAction;
+
     // INPUT HANDLERS
     void Move(const FInputActionValue &Value);
     void Look(const FInputActionValue &Value);
@@ -86,6 +98,7 @@ protected:
     void Jump();
     void StopJumping();
     void Dodge();
+    void Attack();
 
     // Deferred input setup
     void SetupPlayerInputDeferred();

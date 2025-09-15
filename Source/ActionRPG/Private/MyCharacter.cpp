@@ -134,11 +134,15 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent *PlayerInputCompone
         EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AMyCharacter::Jump);
         EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
         EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &AMyCharacter::Dodge);
+        EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &AMyCharacter::Attack);
     }
 }
 
 void AMyCharacter::Move(const FInputActionValue &Value)
 {
+    if (IsAttacking())
+        return;
+
     FVector2D MovementVector = Value.Get<FVector2D>();
 
     if (Controller != nullptr)
@@ -156,6 +160,9 @@ void AMyCharacter::Move(const FInputActionValue &Value)
 
 void AMyCharacter::Look(const FInputActionValue &Value)
 {
+    if (IsAttacking())
+        return;
+
     FVector2D LookAxisVector = Value.Get<FVector2D>();
 
     if (Controller != nullptr)
@@ -167,6 +174,8 @@ void AMyCharacter::Look(const FInputActionValue &Value)
 
 void AMyCharacter::StartSprint()
 {
+    if (IsAttacking())
+        return;
 
     if (!AttributeComponent)
     {
@@ -188,6 +197,8 @@ void AMyCharacter::StartSprint()
 
 void AMyCharacter::StopSprint()
 {
+    if (IsAttacking())
+        return;
 
     if (!AttributeComponent)
     {
@@ -211,6 +222,9 @@ void AMyCharacter::StopSprint()
 
 void AMyCharacter::Jump()
 {
+    if (IsAttacking())
+        return;
+
     Super::Jump();
 
     if (!AttributeComponent)
@@ -232,6 +246,8 @@ void AMyCharacter::Jump()
 
 void AMyCharacter::StopJumping()
 {
+    if (IsAttacking())
+        return;
 
     if (!AttributeComponent)
     {
@@ -254,6 +270,9 @@ void AMyCharacter::StopJumping()
 
 void AMyCharacter::Dodge()
 {
+    if (IsAttacking())
+        return;
+
     // Trigger ability system
     if (!AttributeComponent)
     {
@@ -288,14 +307,40 @@ void AMyCharacter::Dodge()
     }
 }
 
+void AMyCharacter::Attack()
+{
+    if (!AttributeComponent || !AttributeComponent->GetAbilitySystemComponent() || !AttributeComponent->GetAbilitySystemComponent()->AbilityActorInfo.IsValid())
+    {
+        return;
+    }
+
+    UAbilitySystemComponent *ASC = AttributeComponent->GetAbilitySystemComponent();
+
+    TArray<FGameplayAbilitySpec> Abilities = ASC->GetActivatableAbilities();
+    for (const FGameplayAbilitySpec &Spec : Abilities)
+    {
+        if (Spec.Ability && Spec.Ability->GetClass()->IsChildOf(UMyAttackAbility::StaticClass()))
+        {
+            if (Spec.IsActive())
+            {
+                UMyAttackAbility *AttackAbility = Cast<UMyAttackAbility>(Spec.GetPrimaryInstance());
+                if (AttackAbility)
+                {
+                    AttackAbility->OnAttackInputPressed();
+                    return;
+                }
+            }
+            break;
+        }
+    }
+
+    ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Attack));
+}
+
 void AMyCharacter::SetupPlayerInputDeferred()
 {
-
-    // Check if component is now ready
     if (AttributeComponent && AttributeComponent->GetAbilitySystemComponent() && AttributeComponent->GetAbilitySystemComponent()->AbilityActorInfo.IsValid())
     {
-
-        // Setup input now that component is ready
         if (UInputComponent *PlayerInputComp = GetController()->GetPawn()->InputComponent)
         {
             SetupPlayerInputComponent(PlayerInputComp);
@@ -303,7 +348,6 @@ void AMyCharacter::SetupPlayerInputDeferred()
     }
     else
     {
-        // Still not ready, try again next frame
         GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AMyCharacter::SetupPlayerInputDeferred);
     }
 }
@@ -312,4 +356,50 @@ void AMyCharacter::Landed(const FHitResult &Hit)
 {
     Super::Landed(Hit);
     StopJumping();
+}
+
+bool AMyCharacter::IsAttacking() const
+{
+    if (!AttributeComponent || !AttributeComponent->GetAbilitySystemComponent())
+    {
+        return false;
+    }
+
+    UAbilitySystemComponent *ASC = AttributeComponent->GetAbilitySystemComponent();
+    TArray<FGameplayAbilitySpec> Abilities = ASC->GetActivatableAbilities();
+
+    for (const FGameplayAbilitySpec &Spec : Abilities)
+    {
+        if (Spec.Ability && Spec.Ability->GetClass()->IsChildOf(UMyAttackAbility::StaticClass()))
+        {
+            return Spec.IsActive();
+        }
+    }
+
+    return false;
+}
+
+int32 AMyCharacter::GetCurrentComboIndex() const
+{
+    if (!AttributeComponent || !AttributeComponent->GetAbilitySystemComponent())
+    {
+        return 0;
+    }
+
+    UAbilitySystemComponent *ASC = AttributeComponent->GetAbilitySystemComponent();
+    TArray<FGameplayAbilitySpec> Abilities = ASC->GetActivatableAbilities();
+
+    for (const FGameplayAbilitySpec &Spec : Abilities)
+    {
+        if (Spec.Ability && Spec.Ability->GetClass()->IsChildOf(UMyAttackAbility::StaticClass()) && Spec.IsActive())
+        {
+            UMyAttackAbility *AttackAbility = Cast<UMyAttackAbility>(Spec.GetPrimaryInstance());
+            if (AttackAbility)
+            {
+                return AttackAbility->GetCurrentComboIndex();
+            }
+        }
+    }
+
+    return 0;
 }
