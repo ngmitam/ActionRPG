@@ -5,6 +5,12 @@
 #include "GameplayEffectTypes.h"
 #include "Animation/AnimMontage.h"
 #include "GameFramework/Character.h"
+#include "MyEnemy.h"
+#include "Engine/OverlapResult.h"
+#include "Abilities/GameplayAbilityTargetTypes.h"
+#include "Engine/World.h"
+#include "WorldCollision.h"
+#include "Engine/EngineTypes.h"
 
 UMyAttackAbility::UMyAttackAbility()
 {
@@ -130,9 +136,57 @@ void UMyAttackAbility::ApplyDamageEffect()
             const FGameplayAbilityActorInfo *ActorInfo = GetCurrentActorInfo();
             const FGameplayAbilityActivationInfo ActivationInfo = GetCurrentActivationInfo();
 
-            ApplyGameplayEffectToOwner(Handle, ActorInfo, ActivationInfo, DamageEffect.GetDefaultObject(), GetAbilityLevel(Handle, ActorInfo));
+            // Find target (enemy in range)
+            AActor *Target = FindTargetInRange();
+            if (Target)
+            {
+                // Apply to target
+                FGameplayEffectSpecHandle DamageSpecHandle = GetAbilitySystemComponentFromActorInfo()->MakeOutgoingSpec(DamageEffect, GetAbilityLevel(Handle, ActorInfo), FGameplayEffectContextHandle());
+                if (DamageSpecHandle.IsValid())
+                {
+                    // Create target data
+                    FGameplayAbilityTargetData_SingleTargetHit *TargetData = new FGameplayAbilityTargetData_SingleTargetHit();
+                    TargetData->HitResult = FHitResult(Target, nullptr, FVector::ZeroVector, FVector::ZeroVector);
+                    FGameplayAbilityTargetDataHandle TargetDataHandle(TargetData);
+
+                    // Apply to target
+                    ApplyGameplayEffectSpecToTarget(Handle, ActorInfo, ActivationInfo, DamageSpecHandle, TargetDataHandle);
+                }
+            }
+            else
+            {
+                // Apply to owner if no target (for now)
+                ApplyGameplayEffectToOwner(Handle, ActorInfo, ActivationInfo, DamageEffect.GetDefaultObject(), GetAbilityLevel(Handle, ActorInfo));
+            }
         }
     }
+}
+
+AActor *UMyAttackAbility::FindTargetInRange()
+{
+    ACharacter *Character = Cast<ACharacter>(GetCurrentActorInfo()->OwnerActor.Get());
+    if (!Character)
+    {
+        return nullptr;
+    }
+
+    FVector Location = Character->GetActorLocation();
+    float AttackRange = 200.0f; // Configurable
+
+    TArray<FOverlapResult> OverlapResults;
+    FCollisionShape Sphere = FCollisionShape::MakeSphere(AttackRange);
+    GetWorld()->OverlapMultiByChannel(OverlapResults, Location, FQuat::Identity, ECC_Pawn, Sphere);
+
+    for (const FOverlapResult &Result : OverlapResults)
+    {
+        AActor *Actor = Result.GetActor();
+        if (Actor && Actor != Character && Actor->IsA(AMyEnemy::StaticClass()))
+        {
+            return Actor;
+        }
+    }
+
+    return nullptr;
 }
 
 void UMyAttackAbility::OnMontageEnded(UAnimMontage *Montage, bool bInterrupted)

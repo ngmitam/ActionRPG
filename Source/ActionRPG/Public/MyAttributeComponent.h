@@ -70,6 +70,9 @@ public:
     // Set dodge status (called by abilities)
     void SetDodging(bool bDodging) { bIsDodging = bDodging; }
 
+    // Handle death when health <= 0
+    void HandleDeath();
+
 protected:
     // Ability System Component
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))

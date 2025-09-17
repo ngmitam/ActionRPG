@@ -3,6 +3,8 @@
 #include "MyAttributeSet.h"
 #include "GameplayEffectExtension.h"
 #include "Net/UnrealNetwork.h"
+#include "MyDamageEffect.h"
+#include "MyCharacter.h"
 
 UMyAttributeSet::UMyAttributeSet()
 {
@@ -44,6 +46,16 @@ void UMyAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallback
         // Clamp Health between 0 and MaxHealth.
         float NewHealth = FMath::Clamp(GetHealth(), 0.0f, MaxHealthValue);
         SetHealth(NewHealth);
+        if (NewHealth <= 0.0f)
+        {
+            // Death
+            AActor *Owner = GetOwningActor();
+            AMyCharacter *Character = Cast<AMyCharacter>(Owner);
+            if (Character && !Character->IsDead())
+            {
+                Character->HandleDeath();
+            }
+        }
     }
 
     // Check if the attribute being modified is Stamina.
@@ -60,6 +72,9 @@ void UMyAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallback
         float NewStamina = FMath::Clamp(GetStamina(), 0.0f, MaxStaminaValue);
         SetStamina(NewStamina);
     }
+
+    // Handle damage if effect is damage effect
+    // Removed, now handled by modifier
 }
 
 void UMyAttributeSet::OnRep_MaxWalkSpeed(const FGameplayAttributeData &OldMaxWalkSpeed)

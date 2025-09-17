@@ -72,6 +72,9 @@ protected:
     // Apply damage effect
     void ApplyDamageEffect();
 
+    // Find target in attack range
+    AActor *FindTargetInRange();
+
     // Handle montage ended
     void OnMontageEnded(UAnimMontage *Montage, bool bInterrupted);
 };

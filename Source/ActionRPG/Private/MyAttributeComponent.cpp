@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "CoreMinimal.h"
 #include "MyAttributeComponent.h"
+#include "CoreMinimal.h"
 #include "MyAbilitySystemComponent.h"
 #include "MyAttributeSet.h"
 #include "MyGameplayAbility.h"
@@ -52,7 +52,6 @@ void UMyAttributeComponent::BeginPlay()
 
 void UMyAttributeComponent::DeferredInitialize()
 {
-
     // Verify that we have a valid owner (should be the character)
     AActor *Owner = GetOwner();
     if (!Owner)
@@ -114,16 +113,11 @@ void UMyAttributeComponent::DeferredInitialize()
             RetryCount++;
             GetWorld()->GetTimerManager().SetTimerForNextTick(this, &UMyAttributeComponent::DeferredInitialize);
         }
-        else
-        {
-            // Log error if we can't initialize after multiple attempts
-        }
     }
 }
 
 void UMyAttributeComponent::InitializeAbilitySystem()
 {
-
     // Final validation before initializing
     if (!AbilitySystemComponent || !AbilitySystemComponent->AbilityActorInfo.IsValid() || !GetOwner())
     {
@@ -140,7 +134,6 @@ void UMyAttributeComponent::InitializeAbilitySystem()
     // Subscribe to attribute change callbacks
     if (AttributeSet)
     {
-
         AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetStaminaAttribute()).AddUObject(this, &UMyAttributeComponent::OnAttributeChange);
         AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetMaxWalkSpeedAttribute()).AddUObject(this, &UMyAttributeComponent::OnAttributeChange);
         AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetHealthAttribute()).AddUObject(this, &UMyAttributeComponent::OnAttributeChange);
@@ -200,7 +193,6 @@ void UMyAttributeComponent::InitializeAttributes()
             FGameplayEffectSpec *Spec = SpecHandle.Data.Get();
             if (Spec)
             {
-
                 AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*Spec);
             }
         }
@@ -289,16 +281,32 @@ void UMyAttributeComponent::OnAttributeChange(const FOnAttributeChangeData &Data
     else if (Data.Attribute == AttributeSet->GetHealthAttribute())
     {
         // Handle health changes if needed, e.g., update UI or trigger events
+        if (Data.NewValue <= 0.0f)
+        {
+            HandleDeath();
+        }
     }
 }
 
 void UMyAttributeComponent::OnStaminaChange(const FOnAttributeChangeData &Data)
 {
-    if (Data.NewValue <= 0.0f && AbilitySystemComponent && AbilitySystemComponent->AbilityActorInfo.IsValid() &&
-        AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("State.Sprinting"))))
+    if (Data.NewValue <= 0.0f && AbilitySystemComponent &&
+        AbilitySystemComponent->AbilityActorInfo.IsValid() &&
+        AbilitySystemComponent->HasMatchingGameplayTag(
+            FGameplayTag::RequestGameplayTag(FName("State.Sprinting"))))
     {
         // Out of stamina - stop sprinting
         SetSprinting(false);
         // Note: The actual ability cancellation should be handled by the ability system or character
+    }
+}
+
+void UMyAttributeComponent::HandleDeath()
+{
+    AActor *Owner = GetOwner();
+    if (Owner)
+    {
+        // Default: destroy actor after a delay
+        Owner->SetLifeSpan(2.0f); // Destroy after 2 seconds
     }
 }

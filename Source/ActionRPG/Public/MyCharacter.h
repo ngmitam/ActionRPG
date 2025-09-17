@@ -52,6 +52,13 @@ public:
     UFUNCTION(BlueprintPure, Category = "Character State")
     int32 GetCurrentComboIndex() const;
 
+    // Public getter for death status, used by Animation Blueprint
+    UFUNCTION(BlueprintPure, Category = "Character State")
+    bool IsDead() const { return bIsDead; }
+
+    // Handle death
+    void HandleDeath();
+
 protected:
     virtual void BeginPlay() override;
 
@@ -121,4 +128,12 @@ protected:
     // Dodge cooldown time
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dodge")
     float DodgeCooldown = 1.0f;
+
+    // Death animation montage
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    UAnimMontage *DeathMontage;
+
+private:
+    // Death status
+    bool bIsDead = false;
 };
