@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Components/WidgetComponent.h"
 #include "MyEnemy.generated.h"
 
 class UMyAttributeComponent;
@@ -36,6 +37,18 @@ public:
     // Handle death
     void HandleDeath();
 
+    // Update health bar widget
+    void UpdateHealthBar();
+
+    // Called when health changes
+    void OnHealthChanged(float NewHealth);
+
+    // Initialize default attributes
+    void InitializeDefaultAttributes();
+
+    // Initialize health bar widget
+    void InitializeHealthBar();
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
     float MovementSpeed = 100.0f;
 
@@ -52,10 +65,36 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
     UAnimMontage *DeathMontage;
 
-private:
+    // Health bar widget component
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+    UWidgetComponent *HealthBarWidget;
+
+    // Attribute component for GAS
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
     UMyAttributeComponent *AttributeComponent;
 
+    // Health bar widget class (set in Blueprint)
+    UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "UI")
+    TSubclassOf<UUserWidget> HealthBarWidgetClass;
+
+    // Default attribute values (set in Blueprint)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+    float DefaultHealth = 100.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+    float DefaultMaxHealth = 100.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+    float DefaultStamina = 100.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+    float DefaultMaxStamina = 100.0f;
+
+private:
     float LastAttackTime = 0.0f;
 
     ACharacter *PlayerCharacter;
+
+    // Previous health value to detect changes
+    float PreviousHealth = -1.0f;
 };

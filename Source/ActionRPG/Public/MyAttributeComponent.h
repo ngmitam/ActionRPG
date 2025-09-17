@@ -90,9 +90,42 @@ protected:
     UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Abilities")
     TArray<TSubclassOf<UMyGameplayAbility>> DefaultAbilityClasses;
 
+    // Default attribute values
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes", meta = (ClampMin = "0.0"))
+    float DefaultHealth = 100.0f;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes", meta = (ClampMin = "0.0"))
+    float DefaultMaxHealth = 100.0f;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes", meta = (ClampMin = "0.0"))
+    float DefaultStamina = 100.0f;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes", meta = (ClampMin = "0.0"))
+    float DefaultMaxStamina = 100.0f;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes", meta = (ClampMin = "0.0"))
+    float DefaultBaseDamage = 10.0f;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes", meta = (ClampMin = "0.0"))
+    float DefaultMaxWalkSpeed = 300.0f;
+
     // Handle attribute changes
     virtual void OnAttributeChange(const FOnAttributeChangeData &Data);
     void OnStaminaChange(const FOnAttributeChangeData &Data);
+
+public:
+    // Delegate for health changes
+    DECLARE_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float);
+    FOnHealthChanged OnHealthChanged;
+
+    // Public accessor for health changed delegate
+    FOnHealthChanged &GetOnHealthChanged() { return OnHealthChanged; }
+
+    // Get the attribute set
+    UMyAttributeSet *GetAttributeSet() const { return AttributeSet; }
+
+    // Set default attribute values
+    void SetDefaultAttributes(float Health = 100.0f, float MaxHealth = 100.0f, float Stamina = 100.0f, float MaxStamina = 100.0f);
 
 private:
     bool bIsSprinting = false;

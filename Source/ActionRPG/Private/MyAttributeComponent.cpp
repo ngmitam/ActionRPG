@@ -9,9 +9,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameplayEffectTypes.h"
 #include "AbilitySystemComponent.h"
-#include "GameplayEffect.h"
-#include "GameplayAbilitiesModule.h"
-#include "AbilitySystemInterface.h"
 
 UMyAttributeComponent::UMyAttributeComponent()
 {
@@ -153,50 +150,8 @@ void UMyAttributeComponent::InitializeAttributes()
         return;
     }
 
-    for (TSubclassOf<UGameplayEffect> DefaultAttributeEffect : DefaultAttributeEffectClasses)
-    {
-        if (!DefaultAttributeEffect)
-        {
-            continue;
-        }
-
-        // Validate the effect class
-        if (!DefaultAttributeEffect.GetDefaultObject())
-        {
-            continue;
-        }
-
-        // Create proper context with Actor as instigator
-        FGameplayEffectContextHandle ContextHandle = AbilitySystemComponent->MakeEffectContext();
-        AActor *Owner = Cast<AActor>(GetOwner());
-        if (Owner)
-        {
-            FGameplayEffectContext *Context = ContextHandle.Get();
-            if (Context)
-            {
-                Context->AddInstigator(Owner, Owner);
-                TArray<TWeakObjectPtr<AActor>> Targets;
-                Targets.Add(Owner);
-                Context->AddActors(Targets);
-            }
-        }
-        else
-        {
-            // Fallback: use the component itself as instigator if owner is not an Actor
-            // Note: AddInstigator requires AActor, so we can't use the component directly
-        }
-
-        FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(DefaultAttributeEffect, 1.0f, ContextHandle);
-        if (SpecHandle.IsValid())
-        {
-            // Apply to self using the self-application method
-            FGameplayEffectSpec *Spec = SpecHandle.Data.Get();
-            if (Spec)
-            {
-                AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*Spec);
-            }
-        }
-    }
+    // Use the SetDefaultAttributes method to set the base values
+    SetDefaultAttributes(DefaultHealth, DefaultMaxHealth, DefaultStamina, DefaultMaxStamina);
 }
 
 void UMyAttributeComponent::GiveDefaultAbilities()
@@ -280,6 +235,9 @@ void UMyAttributeComponent::OnAttributeChange(const FOnAttributeChangeData &Data
     }
     else if (Data.Attribute == AttributeSet->GetHealthAttribute())
     {
+        // Broadcast health change to listeners
+        OnHealthChanged.Broadcast(Data.NewValue);
+
         // Handle health changes if needed, e.g., update UI or trigger events
         if (Data.NewValue <= 0.0f)
         {
@@ -308,5 +266,19 @@ void UMyAttributeComponent::HandleDeath()
     {
         // Default: destroy actor after a delay
         Owner->SetLifeSpan(2.0f); // Destroy after 2 seconds
+    }
+}
+
+void UMyAttributeComponent::SetDefaultAttributes(float Health, float MaxHealth, float Stamina, float MaxStamina)
+{
+    if (AbilitySystemComponent && AbilitySystemComponent->AbilityActorInfo.IsValid() && AttributeSet)
+    {
+        // Use ApplyModToAttribute to set the base values
+        AbilitySystemComponent->ApplyModToAttribute(AttributeSet->GetHealthAttribute(), EGameplayModOp::Override, Health);
+        AbilitySystemComponent->ApplyModToAttribute(AttributeSet->GetMaxHealthAttribute(), EGameplayModOp::Override, MaxHealth);
+        AbilitySystemComponent->ApplyModToAttribute(AttributeSet->GetStaminaAttribute(), EGameplayModOp::Override, Stamina);
+        AbilitySystemComponent->ApplyModToAttribute(AttributeSet->GetMaxStaminaAttribute(), EGameplayModOp::Override, MaxStamina);
+        AbilitySystemComponent->ApplyModToAttribute(AttributeSet->GetBaseDamageAttribute(), EGameplayModOp::Override, DefaultBaseDamage);
+        AbilitySystemComponent->ApplyModToAttribute(AttributeSet->GetMaxWalkSpeedAttribute(), EGameplayModOp::Override, DefaultMaxWalkSpeed);
     }
 }

@@ -7,7 +7,8 @@
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Abilities/GameplayAbilityTargetTypes.h"
+#include "Components/ProgressBar.h"
+#include "Blueprint/UserWidget.h"
 
 AMyEnemy::AMyEnemy()
 {
@@ -17,6 +18,16 @@ AMyEnemy::AMyEnemy()
     GetCharacterMovement()->bOrientRotationToMovement = true;
     GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
     GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+
+    // Create health bar widget component
+    HealthBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidget"));
+    HealthBarWidget->SetupAttachment(GetRootComponent());
+    HealthBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
+    HealthBarWidget->SetDrawSize(FVector2D(200.0f, 50.0f));
+    HealthBarWidget->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f)); // Above the enemy
+
+    // Create AttributeComponent properly
+    AttributeComponent = CreateDefaultSubobject<UMyAttributeComponent>(TEXT("AttributeComponent"));
 }
 
 void AMyEnemy::BeginPlay()
@@ -26,17 +37,30 @@ void AMyEnemy::BeginPlay()
     // Find player
     PlayerCharacter = UGameplayStatics::GetPlayerCharacter(this, 0);
 
-    // Initialize AttributeComponent
-    if (!AttributeComponent)
+    // AttributeComponent is now created in constructor, just ensure it's ready
+    if (AttributeComponent)
     {
-        // Assume AttributeComponentClass is set, but for simplicity, create default
-        AttributeComponent = NewObject<UMyAttributeComponent>(this);
-        if (AttributeComponent)
-        {
-            AttributeComponent->RegisterComponent();
-            AttributeComponent->InitializeAbilitySystem();
-        }
+        // Don't call InitializeAbilitySystem here - let AttributeComponent handle its own timing
+        GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AMyEnemy::InitializeDefaultAttributes);
     }
+    else
+    {
+    }
+
+    // Initialize the health bar widget
+    InitializeHealthBar();
+}
+
+void AMyEnemy::InitializeHealthBar()
+{
+    // Set health bar widget class (set in Blueprint)
+    if (HealthBarWidget && HealthBarWidgetClass)
+    {
+        HealthBarWidget->SetWidgetClass(HealthBarWidgetClass);
+    }
+
+    // Don't bind to health change delegate here - wait until GAS is fully initialized
+    // The binding will be done in InitializeDefaultAttributes when we're sure everything is ready
 }
 
 void AMyEnemy::Tick(float DeltaTime)
@@ -137,5 +161,53 @@ void AMyEnemy::HandleDeath()
     if (AttributeComponent)
     {
         AttributeComponent->HandleDeath();
+    }
+}
+
+void AMyEnemy::OnHealthChanged(float NewHealth)
+{
+    PreviousHealth = NewHealth;
+    UpdateHealthBar();
+}
+
+void AMyEnemy::InitializeDefaultAttributes()
+{
+    if (AttributeComponent && AttributeComponent->GetAbilitySystemComponent() &&
+        AttributeComponent->GetAbilitySystemComponent()->AbilityActorInfo.IsValid() &&
+        AttributeComponent->GetAttributeSet())
+    {
+        // Bind to health change delegate now that we're sure GAS is fully initialized
+        AttributeComponent->GetOnHealthChanged().AddUObject(this, &AMyEnemy::OnHealthChanged);
+
+        // Use the AttributeComponent's SetDefaultAttributes method instead of direct access
+        AttributeComponent->SetDefaultAttributes(DefaultHealth, DefaultMaxHealth, DefaultStamina, DefaultMaxStamina);
+
+        // Update health bar after setting attributes
+        UpdateHealthBar();
+    }
+    else
+    {
+        // Try again next frame if not ready
+        GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AMyEnemy::InitializeDefaultAttributes);
+    }
+}
+void AMyEnemy::UpdateHealthBar()
+{
+    if (HealthBarWidget && AttributeComponent)
+    {
+        UUserWidget *Widget = HealthBarWidget->GetUserWidgetObject();
+        if (Widget)
+        {
+            // Assuming the widget has a ProgressBar named "HealthBar"
+            UProgressBar *HealthProgressBar = Cast<UProgressBar>(Widget->GetWidgetFromName(TEXT("HealthBar")));
+            if (HealthProgressBar)
+            {
+                float CurrentHealth = AttributeComponent->GetHealth();
+                float MaxHealth = AttributeComponent->GetMaxHealth();
+                float HealthPercent = (MaxHealth > 0.0f) ? (CurrentHealth / MaxHealth) : 0.0f;
+
+                HealthProgressBar->SetPercent(HealthPercent);
+            }
+        }
     }
 }
