@@ -7,10 +7,9 @@
 #include "MyGameMode.generated.h"
 
 UCLASS()
-class ACTIONRPG_API AMyGameMode : public AGameMode
-{
-	GENERATED_BODY()
+class ACTIONRPG_API AMyGameMode : public AGameMode {
+  GENERATED_BODY()
 
 public:
-	AMyGameMode();
+  AMyGameMode();
 };

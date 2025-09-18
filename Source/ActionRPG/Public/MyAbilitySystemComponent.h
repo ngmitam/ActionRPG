@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "AbilitySystemComponent.h"
+#include "CoreMinimal.h"
 #include "MyAbilitySystemComponent.generated.h"
 
 UCLASS()
-class ACTIONRPG_API UMyAbilitySystemComponent : public UAbilitySystemComponent
-{
-	GENERATED_BODY()
+class ACTIONRPG_API UMyAbilitySystemComponent : public UAbilitySystemComponent {
+  GENERATED_BODY()
 };

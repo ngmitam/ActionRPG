@@ -2,99 +2,119 @@
 
 #pragma once
 
+#include "Components/WidgetComponent.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Components/WidgetComponent.h"
 #include "MyEnemy.generated.h"
 
 class UMyAttributeComponent;
 
 UCLASS()
-class ACTIONRPG_API AMyEnemy : public ACharacter
-{
-    GENERATED_BODY()
+class ACTIONRPG_API AMyEnemy : public ACharacter {
+  GENERATED_BODY()
 
 public:
-    AMyEnemy();
+  AMyEnemy();
 
-    virtual void BeginPlay() override;
-    virtual void Tick(float DeltaTime) override;
+  virtual void BeginPlay() override;
+  virtual void Tick(float DeltaTime) override;
 
-    // Get the ability system component from the AttributeComponent
-    UFUNCTION(BlueprintPure, Category = "Abilities")
-    UAbilitySystemComponent *GetAbilitySystem() const;
+  // Get the ability system component from the AttributeComponent
+  UFUNCTION(BlueprintPure, Category = "Abilities")
+  UAbilitySystemComponent *GetAbilitySystem() const;
 
-    // Get the AttributeComponent
-    UFUNCTION(BlueprintPure, Category = "Attributes")
-    UMyAttributeComponent *GetAttributeComponent() const { return AttributeComponent; }
+  // Get the AttributeComponent
+  UFUNCTION(BlueprintPure, Category = "Attributes")
+  UMyAttributeComponent *GetAttributeComponent() const {
+    return AttributeComponent;
+  }
 
-    // Simple movement for performance
-    void MoveTowardsPlayer(float DeltaTime);
+  // Simple movement for performance
+  void MoveTowardsPlayer(float DeltaTime);
 
-    // Attack player if close
-    void AttackPlayer();
+  // Attack player if close
+  void AttackPlayer();
 
-    // Handle death
-    void HandleDeath();
+  // Handle death
+  void HandleDeath();
 
-    // Update health bar widget
-    void UpdateHealthBar();
+  // Update health bar widget
+  void UpdateHealthBar();
 
-    // Called when health changes
-    void OnHealthChanged(float NewHealth);
+  // Called when health changes
+  void OnHealthChanged(float NewHealth);
 
-    // Initialize default attributes
-    void InitializeDefaultAttributes();
+  // Initialize default attributes
+  void InitializeDefaultAttributes();
 
-    // Initialize health bar widget
-    void InitializeHealthBar();
+  // Initialize health bar widget
+  void InitializeHealthBar();
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
-    float MovementSpeed = 100.0f;
+  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+  float MovementSpeed = 100.0f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
-    float AttackRange = 150.0f;
+  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+  float AttackRange = 150.0f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
-    float AttackDamage = 5.0f;
+  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+  float AttackDamage = 5.0f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
-    float AttackCooldown = 2.0f;
+  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+  float AttackCooldown = 2.0f;
 
-    // Death animation montage
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-    UAnimMontage *DeathMontage;
+  // Death animation montage
+  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+  UAnimMontage *DeathMontage;
 
-    // Health bar widget component
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
-    UWidgetComponent *HealthBarWidget;
+  // Attack animation montage
+  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+  UAnimMontage *AttackMontage;
 
-    // Attribute component for GAS
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
-    UMyAttributeComponent *AttributeComponent;
+  // Idle animation montage (optional, for performance)
+  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+  UAnimMontage *IdleMontage;
 
-    // Health bar widget class (set in Blueprint)
-    UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "UI")
-    TSubclassOf<UUserWidget> HealthBarWidgetClass;
+  // Walk animation montage (optional, for performance)
+  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+  UAnimMontage *WalkMontage;
 
-    // Default attribute values (set in Blueprint)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
-    float DefaultHealth = 100.0f;
+  // Health bar widget component
+  UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+  UWidgetComponent *HealthBarWidget;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
-    float DefaultMaxHealth = 100.0f;
+  // Attribute component for GAS
+  UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
+  UMyAttributeComponent *AttributeComponent;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
-    float DefaultStamina = 100.0f;
+  // Health bar widget class (set in Blueprint)
+  UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "UI")
+  TSubclassOf<UUserWidget> HealthBarWidgetClass;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
-    float DefaultMaxStamina = 100.0f;
+  // Default attribute values (set in Blueprint)
+  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+  float DefaultHealth = 100.0f;
+
+  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+  float DefaultMaxHealth = 100.0f;
+
+  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+  float DefaultStamina = 100.0f;
+
+  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+  float DefaultMaxStamina = 100.0f;
+
+  // Play movement animation based on movement state
+  void PlayMovementAnimation(bool bMoving);
 
 private:
-    float LastAttackTime = 0.0f;
+  float LastAttackTime = 0.0f;
 
-    ACharacter *PlayerCharacter;
+  ACharacter *PlayerCharacter;
 
-    // Previous health value to detect changes
-    float PreviousHealth = -1.0f;
+  // Previous health value to detect changes
+  float PreviousHealth = -1.0f;
+
+  // Animation state tracking for performance
+  bool bIsMoving = false;
+  UAnimMontage *CurrentMontage = nullptr;
 };
