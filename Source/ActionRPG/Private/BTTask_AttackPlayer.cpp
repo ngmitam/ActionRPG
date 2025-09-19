@@ -1,0 +1,63 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#include "BTTask_AttackPlayer.h"
+
+#include "AIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "GameFramework/Character.h"
+#include "MyEnemy.h"
+
+UBTTask_AttackPlayer::UBTTask_AttackPlayer()
+{
+	NodeName = "Attack Player";
+}
+
+EBTNodeResult::Type UBTTask_AttackPlayer::ExecuteTask(
+	UBehaviorTreeComponent &OwnerComp, uint8 *NodeMemory)
+{
+	AAIController *AIController = OwnerComp.GetAIOwner();
+	if(!AIController)
+	{
+		return EBTNodeResult::Failed;
+	}
+
+	AMyEnemy *Enemy = Cast<AMyEnemy>(AIController->GetPawn());
+	if(!Enemy)
+	{
+		return EBTNodeResult::Failed;
+	}
+
+	UBlackboardComponent *BlackboardComp = OwnerComp.GetBlackboardComponent();
+	if(!BlackboardComp)
+	{
+		return EBTNodeResult::Failed;
+	}
+
+	// Get player from blackboard
+	ACharacter *PlayerCharacter = Cast<ACharacter>(
+		BlackboardComp->GetValueAsObject(PlayerKey.SelectedKeyName));
+	if(!PlayerCharacter)
+	{
+		return EBTNodeResult::Failed;
+	}
+
+	// Get attack range
+	float AttackRange =
+		BlackboardComp->GetValueAsFloat(AttackRangeKey.SelectedKeyName);
+	if(AttackRange <= 0.0f)
+	{
+		AttackRange = Enemy->AttackRange; // Fallback to enemy's default
+	}
+
+	// Check distance
+	float Distance = FVector::Dist(
+		Enemy->GetActorLocation(), PlayerCharacter->GetActorLocation());
+	if(Distance <= AttackRange)
+	{
+		// Attack
+		Enemy->AttackPlayer(PlayerCharacter);
+		return EBTNodeResult::Succeeded;
+	}
+
+	return EBTNodeResult::Failed;
+}

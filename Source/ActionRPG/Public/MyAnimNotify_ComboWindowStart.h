@@ -10,12 +10,13 @@
  * Animation notify to start combo window
  */
 UCLASS()
-class ACTIONRPG_API UMyAnimNotify_ComboWindowStart : public UAnimNotify {
-  GENERATED_BODY()
+class ACTIONRPG_API UMyAnimNotify_ComboWindowStart : public UAnimNotify
+{
+	GENERATED_BODY()
 
 public:
-  UMyAnimNotify_ComboWindowStart();
+	UMyAnimNotify_ComboWindowStart();
 
-  virtual void Notify(USkeletalMeshComponent *MeshComp,
-                      UAnimSequenceBase *Animation) override;
+	virtual void Notify(USkeletalMeshComponent *MeshComp,
+		UAnimSequenceBase *Animation) override;
 };

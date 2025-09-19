@@ -1,0 +1,50 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+# General Formatting Rules
+IndentWidth: 4
+TabWidth: 4
+UseTab: Always
+Standard: c++17
+# You may need to adjust this depending on your project's C++ standard.
+# UE5 typically uses C++17.
+
+# Epic's Brace Style
+BreakBeforeBraces: Allman
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: InlineOnly
+
+# Aligning and Offsets
+AlignAfterOpenBracket: DontAlign
+AlignEscapedNewlines: Right
+AlignTrailingComments: true
+AccessModifierOffset: -4
+
+# Handling Unreal's specific macros and includes
+SortIncludes: false
+    
+# Other Useful Settings for UE5
+StatementMacros:
+  - 'UCLASS'
+  - 'USTRUCT'
+  - 'UPROPERTY'
+  - 'UFUNCTION'
+  - 'GENERATED_BODY'
+  - 'GENERATED_UCLASS_BODY'
+  - 'GENERATED_USTRUCT_BODY'
+  - 'GENERATED_UINTERFACE_BODY'
+  - 'GENERATED_IINTERFACE_BODY'
+  - 'GENERATED_ENUM_BODY'
+
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeTernaryOperators: true
+BinPackParameters: true
+SpaceBeforeParens: Never
+SpaceAfterCStyleCast: false
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+SpacesInContainerLiterals: false
+SpacesInSquareBrackets: false
+SpaceAfterTemplateKeyword: false
+SpacesBeforeTrailingComments: 1

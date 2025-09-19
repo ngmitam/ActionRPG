@@ -7,6 +7,7 @@
 #include "MyAbilitySystemComponent.generated.h"
 
 UCLASS()
-class ACTIONRPG_API UMyAbilitySystemComponent : public UAbilitySystemComponent {
-  GENERATED_BODY()
+class ACTIONRPG_API UMyAbilitySystemComponent : public UAbilitySystemComponent
+{
+	GENERATED_BODY()
 };

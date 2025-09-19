@@ -10,17 +10,18 @@
  * Damage effect for attack abilities
  */
 UCLASS()
-class ACTIONRPG_API UMyDamageEffect : public UGameplayEffect {
-  GENERATED_BODY()
+class ACTIONRPG_API UMyDamageEffect : public UGameplayEffect
+{
+	GENERATED_BODY()
 
 public:
-  UMyDamageEffect();
+	UMyDamageEffect();
 
-  // Damage magnitude (set in editor or via blueprint)
-  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
-  float BaseDamage = 10.0f;
+	// Damage magnitude (set in editor or via blueprint)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+	float BaseDamage = 10.0f;
 
-  // Damage type tag
-  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
-  FGameplayTag DamageTypeTag;
+	// Damage type tag
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+	FGameplayTag DamageTypeTag;
 };

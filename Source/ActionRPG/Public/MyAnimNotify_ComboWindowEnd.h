@@ -10,12 +10,13 @@
  * Animation notify to end combo window
  */
 UCLASS()
-class ACTIONRPG_API UMyAnimNotify_ComboWindowEnd : public UAnimNotify {
-  GENERATED_BODY()
+class ACTIONRPG_API UMyAnimNotify_ComboWindowEnd : public UAnimNotify
+{
+	GENERATED_BODY()
 
 public:
-  UMyAnimNotify_ComboWindowEnd();
+	UMyAnimNotify_ComboWindowEnd();
 
-  virtual void Notify(USkeletalMeshComponent *MeshComp,
-                      UAnimSequenceBase *Animation) override;
+	virtual void Notify(USkeletalMeshComponent *MeshComp,
+		UAnimSequenceBase *Animation) override;
 };
