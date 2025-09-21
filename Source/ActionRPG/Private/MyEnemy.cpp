@@ -130,29 +130,7 @@ void AMyEnemy::AttackPlayer(ACharacter *Player)
 			}
 		}
 
-		// Apply damage to player
-		if(AttributeComponent
-			&& AttributeComponent->GetAbilitySystemComponent())
-		{
-			AMyCharacter *MyPlayer = Cast<AMyCharacter>(Player);
-			if(MyPlayer && MyPlayer->GetAttributeComponent()
-				&& MyPlayer->GetAbilitySystem())
-			{
-				// Create damage effect spec
-				FGameplayEffectSpecHandle DamageSpecHandle =
-					AttributeComponent->GetAbilitySystemComponent()
-						->MakeOutgoingSpec(UMyDamageEffect::StaticClass(), 1.0f,
-							FGameplayEffectContextHandle());
-				if(DamageSpecHandle.IsValid())
-				{
-					// Apply to player
-					AttributeComponent->GetAbilitySystemComponent()
-						->ApplyGameplayEffectSpecToTarget(
-							*DamageSpecHandle.Data.Get(),
-							MyPlayer->GetAbilitySystem());
-				}
-			}
-		}
+		// Damage is now applied via animation notify
 	}
 }
 

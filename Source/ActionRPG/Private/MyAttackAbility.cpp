@@ -35,7 +35,7 @@ void UMyAttackAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	}
 
 	PlayAttackMontage();
-	ApplyDamageEffect();
+	// Damage is now applied via animation notify
 }
 
 void UMyAttackAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
@@ -70,8 +70,7 @@ void UMyAttackAbility::AdvanceCombo()
 		// Queue the next combo montage to play after current montage ends
 		bComboQueued = true;
 
-		// Apply damage effect immediately
-		ApplyDamageEffect();
+		// Damage is now applied via animation notify
 	}
 }
 
