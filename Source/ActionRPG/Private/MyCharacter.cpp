@@ -44,9 +44,7 @@ AMyCharacter::AMyCharacter()
 		SpringArmComponent, USpringArmComponent::SocketName);
 	CameraComponent->bUsePawnControlRotation = false;
 
-	// Attribute Component class set in Blueprint
-	// Note: Component creation moved to BeginPlay() for proper initialization
-	// timing
+	// Attribute Component will be created in BeginPlay
 }
 
 void AMyCharacter::PossessedBy(AController *NewController)
@@ -63,6 +61,26 @@ void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	InitializeAttributeComponent();
+	InitializePlayerUI();
+	SetupInputMapping();
+
+	// Ensure AttributeComponent is ready before proceeding
+	if(!IsAttributeSystemValid())
+	{
+		// Defer input setup if component not ready
+		GetWorld()->GetTimerManager().SetTimerForNextTick(
+			this, &AMyCharacter::SetupPlayerInputDeferred);
+	}
+	else
+	{
+		// Setup input immediately if component is ready
+		SetupPlayerInputComponent(this->InputComponent);
+	}
+}
+
+void AMyCharacter::InitializeAttributeComponent()
+{
 	// Spawn the AttributeComponent from the selected class
 	if(AttributeComponentClass)
 	{
@@ -78,7 +96,10 @@ void AMyCharacter::BeginPlay()
 			}
 		}
 	}
+}
 
+void AMyCharacter::InitializePlayerUI()
+{
 	// Create and display the Player Controller
 	if(APlayerController *PlayerController =
 			Cast<APlayerController>(Controller))
@@ -97,7 +118,10 @@ void AMyCharacter::BeginPlay()
 			}
 		}
 	}
+}
 
+void AMyCharacter::SetupInputMapping()
+{
 	// Input Mapping Context
 	if(APlayerController *PlayerController =
 			Cast<APlayerController>(Controller))
@@ -108,21 +132,6 @@ void AMyCharacter::BeginPlay()
 		{
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
-	}
-
-	// Ensure AttributeComponent is ready before proceeding
-	if(!AttributeComponent || !AttributeComponent->GetAbilitySystemComponent()
-		|| !AttributeComponent->GetAbilitySystemComponent()
-				->AbilityActorInfo.IsValid())
-	{
-		// Defer input setup if component not ready
-		GetWorld()->GetTimerManager().SetTimerForNextTick(
-			this, &AMyCharacter::SetupPlayerInputDeferred);
-	}
-	else
-	{
-		// Setup input immediately if component is ready
-		SetupPlayerInputComponent(GetController()->GetPawn()->InputComponent);
 	}
 }
 
@@ -199,22 +208,17 @@ void AMyCharacter::StartSprint()
 	if(IsAttacking())
 		return;
 
-	if(!AttributeComponent)
+	if(!IsAttributeSystemValid())
 	{
 		return;
 	}
 
-	if(UAbilitySystemComponent *ASC =
-			AttributeComponent->GetAbilitySystemComponent())
-	{
-		// Check if AbilityActorInfo is valid before proceeding
-		if(ASC->AbilityActorInfo.IsValid())
-		{
-			AttributeComponent->SetSprinting(true);
-			ASC->AbilityLocalInputPressed(
-				static_cast<int32>(EMyAbilityInputID::Sprint));
-		}
-	}
+	UAbilitySystemComponent *ASC =
+		AttributeComponent->GetAbilitySystemComponent();
+
+	AttributeComponent->SetSprinting(true);
+	ASC->AbilityLocalInputPressed(
+		static_cast<int32>(EMyAbilityInputID::Sprint));
 }
 
 void AMyCharacter::StopSprint()
@@ -222,24 +226,19 @@ void AMyCharacter::StopSprint()
 	if(IsAttacking())
 		return;
 
-	if(!AttributeComponent)
+	if(!IsAttributeSystemValid())
 	{
 		return;
 	}
 
-	if(UAbilitySystemComponent *ASC =
-			AttributeComponent->GetAbilitySystemComponent())
-	{
-		// Check if AbilityActorInfo is valid before proceeding
-		if(ASC->AbilityActorInfo.IsValid())
-		{
-			FGameplayTagContainer SprintAbilityTagContainer;
-			SprintAbilityTagContainer.AddTag(
-				FGameplayTag::RequestGameplayTag(FName("Ability.Sprint")));
-			ASC->CancelAbilities(&SprintAbilityTagContainer);
-			AttributeComponent->SetSprinting(false);
-		}
-	}
+	UAbilitySystemComponent *ASC =
+		AttributeComponent->GetAbilitySystemComponent();
+
+	FGameplayTagContainer SprintAbilityTagContainer;
+	SprintAbilityTagContainer.AddTag(
+		FGameplayTag::RequestGameplayTag(FName("Ability.Sprint")));
+	ASC->CancelAbilities(&SprintAbilityTagContainer);
+	AttributeComponent->SetSprinting(false);
 }
 
 void AMyCharacter::Jump()
@@ -249,21 +248,15 @@ void AMyCharacter::Jump()
 
 	Super::Jump();
 
-	if(!AttributeComponent)
+	if(!IsAttributeSystemValid())
 	{
 		return;
 	}
 
-	if(UAbilitySystemComponent *ASC =
-			AttributeComponent->GetAbilitySystemComponent())
-	{
-		// Check if AbilityActorInfo is valid before proceeding
-		if(ASC->AbilityActorInfo.IsValid())
-		{
-			ASC->AbilityLocalInputPressed(
-				static_cast<int32>(EMyAbilityInputID::Jump));
-		}
-	}
+	UAbilitySystemComponent *ASC =
+		AttributeComponent->GetAbilitySystemComponent();
+
+	ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Jump));
 }
 
 void AMyCharacter::StopJumping()
@@ -271,23 +264,18 @@ void AMyCharacter::StopJumping()
 	if(IsAttacking())
 		return;
 
-	if(!AttributeComponent)
+	if(!IsAttributeSystemValid())
 	{
 		return;
 	}
 
-	if(UAbilitySystemComponent *ASC =
-			AttributeComponent->GetAbilitySystemComponent())
-	{
-		// Check if AbilityActorInfo is valid before proceeding
-		if(ASC->AbilityActorInfo.IsValid())
-		{
-			FGameplayTagContainer JumpAbilityTagContainer;
-			JumpAbilityTagContainer.AddTag(
-				FGameplayTag::RequestGameplayTag(FName("Ability.Jump")));
-			ASC->CancelAbilities(&JumpAbilityTagContainer);
-		}
-	}
+	UAbilitySystemComponent *ASC =
+		AttributeComponent->GetAbilitySystemComponent();
+
+	FGameplayTagContainer JumpAbilityTagContainer;
+	JumpAbilityTagContainer.AddTag(
+		FGameplayTag::RequestGameplayTag(FName("Ability.Jump")));
+	ASC->CancelAbilities(&JumpAbilityTagContainer);
 }
 
 void AMyCharacter::Dodge()
@@ -296,78 +284,56 @@ void AMyCharacter::Dodge()
 		return;
 
 	// Trigger ability system
-	if(!AttributeComponent)
-	{
-		return;
-	}
-
-	if(UAbilitySystemComponent *ASC =
-			AttributeComponent->GetAbilitySystemComponent())
-	{
-		if(ASC->AbilityActorInfo.IsValid() && !AttributeComponent->IsDodging())
-		{
-			AttributeComponent->SetDodging(true);
-			ASC->AbilityLocalInputPressed(
-				static_cast<int32>(EMyAbilityInputID::Dodge));
-
-			// Reset dodge status after cooldown and cancel dodge ability
-			FTimerHandle UnusedHandle;
-			GetWorld()->GetTimerManager().SetTimer(
-				UnusedHandle,
-				[this]()
-				{
-					if(AttributeComponent)
-					{
-						AttributeComponent->SetDodging(false);
-						if(UAbilitySystemComponent *ASCInner =
-								AttributeComponent->GetAbilitySystemComponent())
-						{
-							FGameplayTagContainer DodgeAbilityTagContainer;
-							DodgeAbilityTagContainer.AddTag(
-								FGameplayTag::RequestGameplayTag(
-									FName("Ability.Dodge")));
-							ASCInner->CancelAbilities(
-								&DodgeAbilityTagContainer);
-						}
-					}
-				},
-				DodgeCooldown, false);
-		}
-	}
-}
-
-void AMyCharacter::Attack()
-{
-	if(!AttributeComponent || !AttributeComponent->GetAbilitySystemComponent()
-		|| !AttributeComponent->GetAbilitySystemComponent()
-				->AbilityActorInfo.IsValid())
+	if(!IsAttributeSystemValid() || AttributeComponent->IsDodging())
 	{
 		return;
 	}
 
 	UAbilitySystemComponent *ASC =
 		AttributeComponent->GetAbilitySystemComponent();
-	TArray<FGameplayAbilitySpec> Abilities = ASC->GetActivatableAbilities();
 
-	for(const FGameplayAbilitySpec &Spec : Abilities)
-	{
-		if(Spec.Ability
-			&& Spec.Ability->GetClass()->IsChildOf(
-				UMyAttackAbility::StaticClass()))
+	AttributeComponent->SetDodging(true);
+	ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Dodge));
+
+	// Reset dodge status after cooldown and cancel dodge ability
+	FTimerHandle UnusedHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		UnusedHandle,
+		[this]()
 		{
-			if(Spec.IsActive())
+			if(AttributeComponent)
 			{
-				UMyAttackAbility *AttackAbility =
-					Cast<UMyAttackAbility>(Spec.GetPrimaryInstance());
-				if(AttackAbility)
+				AttributeComponent->SetDodging(false);
+				if(UAbilitySystemComponent *ASCInner =
+						AttributeComponent->GetAbilitySystemComponent())
 				{
-					AttackAbility->OnAttackInputPressed();
-					return;
+					FGameplayTagContainer DodgeAbilityTagContainer;
+					DodgeAbilityTagContainer.AddTag(
+						FGameplayTag::RequestGameplayTag(
+							FName("Ability.Dodge")));
+					ASCInner->CancelAbilities(&DodgeAbilityTagContainer);
 				}
 			}
-			break;
-		}
+		},
+		DodgeCooldown, false);
+}
+
+void AMyCharacter::Attack()
+{
+	if(!IsAttributeSystemValid())
+	{
+		return;
 	}
+
+	UMyAttackAbility *ActiveAbility = GetActiveAttackAbility();
+	if(ActiveAbility)
+	{
+		ActiveAbility->OnAttackInputPressed();
+		return;
+	}
+
+	UAbilitySystemComponent *ASC =
+		AttributeComponent->GetAbilitySystemComponent();
 
 	ASC->AbilityLocalInputPressed(
 		static_cast<int32>(EMyAbilityInputID::Attack));
@@ -375,12 +341,9 @@ void AMyCharacter::Attack()
 
 void AMyCharacter::SetupPlayerInputDeferred()
 {
-	if(AttributeComponent && AttributeComponent->GetAbilitySystemComponent()
-		&& AttributeComponent->GetAbilitySystemComponent()
-			   ->AbilityActorInfo.IsValid())
+	if(IsAttributeSystemValid())
 	{
-		if(UInputComponent *PlayerInputComp =
-				GetController()->GetPawn()->InputComponent)
+		if(UInputComponent *PlayerInputComp = this->InputComponent)
 		{
 			SetupPlayerInputComponent(PlayerInputComp);
 		}
@@ -422,11 +385,6 @@ void AMyCharacter::HandleDeath()
 			{
 				float Duration = AnimInstance->Montage_Play(DeathMontage);
 				// Set timer to destroy after animation
-				float PlayDuration =
-					AnimInstance->Montage_GetPlayRate(DeathMontage) > 0.0f
-						? DeathMontage->GetPlayLength()
-							  / AnimInstance->Montage_GetPlayRate(DeathMontage)
-						: DeathMontage->GetPlayLength();
 				FTimerHandle DeathTimer;
 				GetWorld()->GetTimerManager().SetTimer(
 					DeathTimer,
@@ -437,7 +395,7 @@ void AMyCharacter::HandleDeath()
 							AttributeComponent->HandleDeath();
 						}
 					},
-					PlayDuration, false);
+					Duration, false);
 			}
 		}
 	}
@@ -457,9 +415,20 @@ void AMyCharacter::HandleDeath()
 
 bool AMyCharacter::IsAttacking() const
 {
-	if(!AttributeComponent || !AttributeComponent->GetAbilitySystemComponent())
+	return GetActiveAttackAbility() != nullptr;
+}
+
+int32 AMyCharacter::GetCurrentComboIndex() const
+{
+	UMyAttackAbility *Ability = GetActiveAttackAbility();
+	return Ability ? Ability->GetCurrentComboIndex() : 0;
+}
+
+UMyAttackAbility *AMyCharacter::GetActiveAttackAbility() const
+{
+	if(!IsAttributeSystemValid())
 	{
-		return false;
+		return nullptr;
 	}
 
 	UAbilitySystemComponent *ASC =
@@ -472,39 +441,12 @@ bool AMyCharacter::IsAttacking() const
 			&& Spec.Ability->GetClass()->IsChildOf(
 				UMyAttackAbility::StaticClass()))
 		{
-			return Spec.IsActive();
-		}
-	}
-
-	return false;
-}
-
-int32 AMyCharacter::GetCurrentComboIndex() const
-{
-	if(!AttributeComponent || !AttributeComponent->GetAbilitySystemComponent())
-	{
-		return 0;
-	}
-
-	UAbilitySystemComponent *ASC =
-		AttributeComponent->GetAbilitySystemComponent();
-	TArray<FGameplayAbilitySpec> Abilities = ASC->GetActivatableAbilities();
-
-	for(const FGameplayAbilitySpec &Spec : Abilities)
-	{
-		if(Spec.Ability
-			&& Spec.Ability->GetClass()->IsChildOf(
-				UMyAttackAbility::StaticClass())
-			&& Spec.IsActive())
-		{
-			UMyAttackAbility *AttackAbility =
-				Cast<UMyAttackAbility>(Spec.GetPrimaryInstance());
-			if(AttackAbility)
+			if(Spec.IsActive())
 			{
-				return AttackAbility->GetCurrentComboIndex();
+				return Cast<UMyAttackAbility>(Spec.GetPrimaryInstance());
 			}
 		}
 	}
 
-	return 0;
+	return nullptr;
 }

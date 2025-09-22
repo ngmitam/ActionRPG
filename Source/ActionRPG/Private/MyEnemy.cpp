@@ -111,9 +111,11 @@ void AMyEnemy::AttackPlayer(ACharacter *Player)
 	float Distance =
 		FVector::Dist(GetActorLocation(), Player->GetActorLocation());
 	if(Distance <= AttackRange
-		&& GetWorld()->GetTimeSeconds() - LastAttackTime > AttackCooldown)
+		&& GetWorld()->GetTimeSeconds() - LastAttackTime > AttackCooldown
+		&& !bIsAttacking)
 	{
 		LastAttackTime = GetWorld()->GetTimeSeconds();
+		bIsAttacking = true;
 
 		// Play attack animation if available
 		if(AttackMontage)
@@ -126,6 +128,9 @@ void AMyEnemy::AttackPlayer(ACharacter *Player)
 				{
 					AnimInstance->Montage_Stop(0.0f);
 					AnimInstance->Montage_Play(AttackMontage);
+					// Bind to montage end
+					AnimInstance->OnMontageEnded.AddDynamic(
+						this, &AMyEnemy::OnAttackMontageEnded);
 				}
 			}
 		}
@@ -310,5 +315,14 @@ void AMyEnemy::PlayMovementAnimation(bool bMoving)
 			AnimInstance->Montage_Stop(0.0f);
 			CurrentMontage = nullptr;
 		}
+	}
+}
+
+void AMyEnemy::OnAttackMontageEnded(UAnimMontage *Montage, bool bInterrupted)
+{
+	if(Montage == AttackMontage)
+	{
+		bIsAttacking = false;
+		OnAttackFinished.Broadcast();
 	}
 }

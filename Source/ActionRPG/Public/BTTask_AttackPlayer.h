@@ -6,6 +6,8 @@
 #include "CoreMinimal.h"
 #include "BTTask_AttackPlayer.generated.h"
 
+class AMyEnemy;
+
 /**
  * BT Task to attack the player if in range
  */

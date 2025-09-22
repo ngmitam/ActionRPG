@@ -15,15 +15,8 @@ UMyAttributeComponent::UMyAttributeComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
-	// Ability System Component - moved to constructor for proper initialization
-	// timing
 	AbilitySystemComponent = CreateDefaultSubobject<UMyAbilitySystemComponent>(
 		"AbilitySystemComponent");
-	// Removed SetIsReplicated and SetReplicationMode from constructor to avoid
-	// timing issues They will be set in DeferredInitialize after
-	// AbilityActorInfo is initialized
-
-	// Attribute Set will be created in DeferredInitialize with proper outer
 }
 
 UAbilitySystemComponent *
@@ -40,9 +33,6 @@ void UMyAttributeComponent::OnRegister()
 	{
 		AbilitySystemComponent->RegisterComponent();
 	}
-
-	// Component registration - no GAS initialization here to avoid timing
-	// issues
 }
 
 void UMyAttributeComponent::BeginPlay()
@@ -57,19 +47,9 @@ void UMyAttributeComponent::BeginPlay()
 void UMyAttributeComponent::DeferredInitialize()
 {
 	// Verify that we have a valid owner (should be the character)
-	AActor *Owner = GetOwner();
-	if(!Owner)
+	if(!ValidateOwner())
 	{
 		// If no owner, try again next frame
-		GetWorld()->GetTimerManager().SetTimerForNextTick(
-			this, &UMyAttributeComponent::DeferredInitialize);
-		return;
-	}
-
-	// Verify that the owner is properly initialized
-	if(!Owner->IsActorInitialized())
-	{
-		// Owner not fully initialized, try again next frame
 		GetWorld()->GetTimerManager().SetTimerForNextTick(
 			this, &UMyAttributeComponent::DeferredInitialize);
 		return;
@@ -87,13 +67,55 @@ void UMyAttributeComponent::DeferredInitialize()
 	// Initialize AbilityActorInfo if not already done
 	if(!AbilitySystemComponent->AbilityActorInfo.IsValid())
 	{
-		AbilitySystemComponent->InitAbilityActorInfo(Owner, Owner);
+		AbilitySystemComponent->InitAbilityActorInfo(GetOwner(), GetOwner());
 	}
 
+	// Initialize GAS components
+	InitializeGASComponents();
+
+	// Double-check that AbilityActorInfo is now valid
+	if(AbilitySystemComponent->AbilityActorInfo.IsValid())
+	{
+		InitializeAbilitySystem();
+	}
+	else
+	{
+		// Still not ready, try again next frame (with a limit to prevent
+		// infinite loops)
+		static int32 RetryCount = 0;
+		if(RetryCount < MaxInitializationRetries)
+		{
+			RetryCount++;
+			GetWorld()->GetTimerManager().SetTimerForNextTick(
+				this, &UMyAttributeComponent::DeferredInitialize);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error,
+				TEXT("Failed to initialize Ability System after %d retries"),
+				MaxInitializationRetries);
+		}
+	}
+}
+
+bool UMyAttributeComponent::ValidateOwner() const
+{
+	AActor *Owner = GetOwner();
+	if(!Owner)
+	{
+		return false;
+	}
+
+	// Verify that the owner is properly initialized
+	return Owner->IsActorInitialized();
+}
+
+void UMyAttributeComponent::InitializeGASComponents()
+{
 	// Create AttributeSet with Owner as outer
 	if(!AttributeSet)
 	{
-		AttributeSet = NewObject<UMyAttributeSet>(Owner);
+		AttributeSet = NewObject<UMyAttributeSet>(GetOwner());
 	}
 
 	// Add AttributeSet to AbilitySystemComponent if not already added
@@ -108,31 +130,12 @@ void UMyAttributeComponent::DeferredInitialize()
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(
 		EGameplayEffectReplicationMode::Minimal);
-
-	// Double-check that AbilityActorInfo is now valid
-	if(AbilitySystemComponent->AbilityActorInfo.IsValid())
-	{
-		InitializeAbilitySystem();
-	}
-	else
-	{
-		// Still not ready, try again next frame (with a limit to prevent
-		// infinite loops)
-		static int RetryCount = 0;
-		if(RetryCount < 10) // Limit retries to prevent infinite loop
-		{
-			RetryCount++;
-			GetWorld()->GetTimerManager().SetTimerForNextTick(
-				this, &UMyAttributeComponent::DeferredInitialize);
-		}
-	}
 }
 
 void UMyAttributeComponent::InitializeAbilitySystem()
 {
 	// Final validation before initializing
-	if(!AbilitySystemComponent
-		|| !AbilitySystemComponent->AbilityActorInfo.IsValid() || !GetOwner())
+	if(!IsAbilitySystemValid() || !GetOwner())
 	{
 		return;
 	}
@@ -171,8 +174,7 @@ void UMyAttributeComponent::InitializeAbilitySystem()
 
 void UMyAttributeComponent::InitializeAttributes()
 {
-	if(!AbilitySystemComponent
-		|| !AbilitySystemComponent->AbilityActorInfo.IsValid())
+	if(!IsAbilitySystemValid())
 	{
 		return;
 	}
@@ -184,9 +186,7 @@ void UMyAttributeComponent::InitializeAttributes()
 
 void UMyAttributeComponent::GiveDefaultAbilities()
 {
-	if(!AbilitySystemComponent
-		|| !AbilitySystemComponent->AbilityActorInfo.IsValid()
-		|| !GetOwner()->HasAuthority())
+	if(!IsAbilitySystemValid() || !GetOwner()->HasAuthority())
 	{
 		return;
 	}
@@ -304,27 +304,26 @@ void UMyAttributeComponent::HandleDeath()
 void UMyAttributeComponent::SetDefaultAttributes(
 	float Health, float MaxHealth, float Stamina, float MaxStamina)
 {
-	if(AbilitySystemComponent
-		&& AbilitySystemComponent->AbilityActorInfo.IsValid() && AttributeSet)
+	if(!IsAbilitySystemValid() || !AttributeSet)
 	{
-		// Use ApplyModToAttribute to set the base values
-		AbilitySystemComponent->ApplyModToAttribute(
-			AttributeSet->GetHealthAttribute(), EGameplayModOp::Override,
-			Health);
-		AbilitySystemComponent->ApplyModToAttribute(
-			AttributeSet->GetMaxHealthAttribute(), EGameplayModOp::Override,
-			MaxHealth);
-		AbilitySystemComponent->ApplyModToAttribute(
-			AttributeSet->GetStaminaAttribute(), EGameplayModOp::Override,
-			Stamina);
-		AbilitySystemComponent->ApplyModToAttribute(
-			AttributeSet->GetMaxStaminaAttribute(), EGameplayModOp::Override,
-			MaxStamina);
-		AbilitySystemComponent->ApplyModToAttribute(
-			AttributeSet->GetBaseDamageAttribute(), EGameplayModOp::Override,
-			DefaultBaseDamage);
-		AbilitySystemComponent->ApplyModToAttribute(
-			AttributeSet->GetMaxWalkSpeedAttribute(), EGameplayModOp::Override,
-			DefaultMaxWalkSpeed);
+		return;
 	}
+
+	// Use ApplyModToAttribute to set the base values
+	AbilitySystemComponent->ApplyModToAttribute(
+		AttributeSet->GetHealthAttribute(), EGameplayModOp::Override, Health);
+	AbilitySystemComponent->ApplyModToAttribute(
+		AttributeSet->GetMaxHealthAttribute(), EGameplayModOp::Override,
+		MaxHealth);
+	AbilitySystemComponent->ApplyModToAttribute(
+		AttributeSet->GetStaminaAttribute(), EGameplayModOp::Override, Stamina);
+	AbilitySystemComponent->ApplyModToAttribute(
+		AttributeSet->GetMaxStaminaAttribute(), EGameplayModOp::Override,
+		MaxStamina);
+	AbilitySystemComponent->ApplyModToAttribute(
+		AttributeSet->GetBaseDamageAttribute(), EGameplayModOp::Override,
+		DefaultBaseDamage);
+	AbilitySystemComponent->ApplyModToAttribute(
+		AttributeSet->GetMaxWalkSpeedAttribute(), EGameplayModOp::Override,
+		DefaultMaxWalkSpeed);
 }

@@ -71,6 +71,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Character State")
 	bool IsDead() const { return bIsDead; }
 
+	// Check if the attribute component and ability system are valid
+	bool IsAttributeSystemValid() const
+	{
+		return AttributeComponent && AttributeComponent->IsAbilitySystemValid();
+	}
+
 	// Handle death
 	void HandleDeath();
 
@@ -122,9 +128,6 @@ protected:
 	void Dodge();
 	void Attack();
 
-	// Deferred input setup
-	void SetupPlayerInputDeferred();
-
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Attributes")
 	TSubclassOf<UMyAttributeComponent> AttributeComponentClass;
 
@@ -149,6 +152,21 @@ protected:
 	UAnimMontage *DeathMontage;
 
 private:
+	// Initialize the attribute component
+	void InitializeAttributeComponent();
+
+	// Create and setup the player UI
+	void InitializePlayerUI();
+
+	// Setup input mapping context
+	void SetupInputMapping();
+
+	// Deferred input setup
+	void SetupPlayerInputDeferred();
+
 	// Death status
 	bool bIsDead = false;
+
+	// Helper to get the active attack ability
+	UMyAttackAbility *GetActiveAttackAbility() const;
 };

@@ -34,8 +34,9 @@ EBTNodeResult::Type UBTTask_AttackPlayer::ExecuteTask(
 	}
 
 	// Get player from blackboard
-	ACharacter *PlayerCharacter = Cast<ACharacter>(
-		BlackboardComp->GetValueAsObject(PlayerKey.SelectedKeyName));
+	UObject *PlayerObject =
+		BlackboardComp->GetValueAsObject(PlayerKey.SelectedKeyName);
+	ACharacter *PlayerCharacter = Cast<ACharacter>(PlayerObject);
 	if(!PlayerCharacter)
 	{
 		return EBTNodeResult::Failed;
@@ -54,8 +55,10 @@ EBTNodeResult::Type UBTTask_AttackPlayer::ExecuteTask(
 		Enemy->GetActorLocation(), PlayerCharacter->GetActorLocation());
 	if(Distance <= AttackRange)
 	{
-		// Attack
-		Enemy->AttackPlayer(PlayerCharacter);
+		if(!Enemy->bIsAttacking)
+		{
+			Enemy->AttackPlayer(PlayerCharacter);
+		}
 		return EBTNodeResult::Succeeded;
 	}
 

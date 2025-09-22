@@ -80,6 +80,27 @@ public:
 	// Handle death when health <= 0
 	void HandleDeath();
 
+	// Delegate for health changes
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float);
+	FOnHealthChanged OnHealthChanged;
+
+	// Public accessor for health changed delegate
+	FOnHealthChanged &GetOnHealthChanged() { return OnHealthChanged; }
+
+	// Get the attribute set
+	UMyAttributeSet *GetAttributeSet() const { return AttributeSet; }
+
+	// Check if the ability system is fully initialized and valid
+	bool IsAbilitySystemValid() const
+	{
+		return AbilitySystemComponent
+			   && AbilitySystemComponent->AbilityActorInfo.IsValid();
+	}
+
+	// Set default attribute values
+	void SetDefaultAttributes(float Health = 100.0f, float MaxHealth = 100.0f,
+		float Stamina = 100.0f, float MaxStamina = 100.0f);
+
 protected:
 	// Ability System Component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities",
@@ -128,22 +149,16 @@ protected:
 	virtual void OnAttributeChange(const FOnAttributeChangeData &Data);
 	void OnStaminaChange(const FOnAttributeChangeData &Data);
 
-public:
-	// Delegate for health changes
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float);
-	FOnHealthChanged OnHealthChanged;
-
-	// Public accessor for health changed delegate
-	FOnHealthChanged &GetOnHealthChanged() { return OnHealthChanged; }
-
-	// Get the attribute set
-	UMyAttributeSet *GetAttributeSet() const { return AttributeSet; }
-
-	// Set default attribute values
-	void SetDefaultAttributes(float Health = 100.0f, float MaxHealth = 100.0f,
-		float Stamina = 100.0f, float MaxStamina = 100.0f);
-
 private:
+	// Validate that the owner is properly initialized
+	bool ValidateOwner() const;
+
+	// Initialize GAS components (AttributeSet, replication)
+	void InitializeGASComponents();
+
+	// Maximum number of retry attempts for deferred initialization
+	static constexpr int32 MaxInitializationRetries = 10;
+
 	bool bIsSprinting = false;
 	bool bIsDodging = false;
 };

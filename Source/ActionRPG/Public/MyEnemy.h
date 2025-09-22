@@ -109,6 +109,18 @@ public:
 	// Play movement animation based on movement state
 	void PlayMovementAnimation(bool bMoving);
 
+	// Called when attack montage ends
+	UFUNCTION()
+	void OnAttackMontageEnded(UAnimMontage *Montage, bool bInterrupted);
+
+	// Attack state
+	bool bIsAttacking = false;
+
+	// Delegate for when attack finishes
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAttackFinished);
+	UPROPERTY(BlueprintAssignable, Category = "AI")
+	FOnAttackFinished OnAttackFinished;
+
 private:
 	float LastAttackTime = 0.0f;
 
