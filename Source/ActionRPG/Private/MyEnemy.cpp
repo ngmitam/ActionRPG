@@ -86,10 +86,6 @@ void AMyEnemy::Tick(float DeltaTime)
 
 	// AI logic moved to Behavior Tree for better performance
 	// No longer handling movement and attack in Tick
-
-	// Handle movement animation based on velocity
-	bIsMoving = GetVelocity().Size() > 0.0f;
-	PlayMovementAnimation(bIsMoving);
 }
 
 void AMyEnemy::MoveTowardsPlayer(float DeltaTime)
