@@ -55,7 +55,7 @@ public:
 protected:
 	// Combo system properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combo")
-	int32 MaxComboCount = 3;
+	int32 MaxComboCount = DefaultValues::MaxComboCount;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combo")
 	TArray<UAnimMontage *> AttackMontages; // Montages for each combo level
@@ -65,7 +65,7 @@ protected:
 		DamageEffects; // Damage effects for each combo level
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack")
-	float AttackRange = 200.0f;
+	float AttackRange = DefaultValues::AttackRange;
 
 	// Current combo state
 	int32 CurrentComboIndex = 0;

@@ -36,11 +36,12 @@ EBTNodeResult::Type UBTTask_AttackPlayer::ExecuteTask(
 	// Get player from blackboard
 	UObject *PlayerObject =
 		BlackboardComp->GetValueAsObject(PlayerKey.SelectedKeyName);
-	ACharacter *PlayerCharacter = Cast<ACharacter>(PlayerObject);
-	if(!PlayerCharacter)
+	if(!PlayerObject || PlayerObject->IsDefaultSubobject()
+		|| !PlayerObject->IsA(ACharacter::StaticClass()))
 	{
 		return EBTNodeResult::Failed;
 	}
+	ACharacter *PlayerCharacter = Cast<ACharacter>(PlayerObject);
 
 	// Get attack range
 	float AttackRange =
@@ -55,10 +56,7 @@ EBTNodeResult::Type UBTTask_AttackPlayer::ExecuteTask(
 		Enemy->GetActorLocation(), PlayerCharacter->GetActorLocation());
 	if(Distance <= AttackRange)
 	{
-		if(!Enemy->bIsAttacking)
-		{
-			Enemy->AttackPlayer(PlayerCharacter);
-		}
+		Enemy->AttackPlayer(PlayerCharacter);
 		return EBTNodeResult::Succeeded;
 	}
 

@@ -56,7 +56,7 @@ void UMyAttributeComponent::DeferredInitialize()
 	}
 
 	// Ensure AbilitySystemComponent exists and is registered
-	if(!AbilitySystemComponent || !AbilitySystemComponent->IsRegistered())
+	if(!IsAbilitySystemComponentRegistered())
 	{
 		// Component not created or registered, try again next frame
 		GetWorld()->GetTimerManager().SetTimerForNextTick(
@@ -64,37 +64,24 @@ void UMyAttributeComponent::DeferredInitialize()
 		return;
 	}
 
-	// Initialize AbilityActorInfo if not already done
-	if(!AbilitySystemComponent->AbilityActorInfo.IsValid())
+	// Try to initialize AbilityActorInfo if not already done
+	if(!TryInitializeAbilityActorInfo())
 	{
-		AbilitySystemComponent->InitAbilityActorInfo(GetOwner(), GetOwner());
+		HandleInitializationRetry();
+		return;
 	}
 
 	// Initialize GAS components
 	InitializeGASComponents();
 
 	// Double-check that AbilityActorInfo is now valid
-	if(AbilitySystemComponent->AbilityActorInfo.IsValid())
+	if(IsAbilityActorInfoValid())
 	{
 		InitializeAbilitySystem();
 	}
 	else
 	{
-		// Still not ready, try again next frame (with a limit to prevent
-		// infinite loops)
-		static int32 RetryCount = 0;
-		if(RetryCount < MaxInitializationRetries)
-		{
-			RetryCount++;
-			GetWorld()->GetTimerManager().SetTimerForNextTick(
-				this, &UMyAttributeComponent::DeferredInitialize);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error,
-				TEXT("Failed to initialize Ability System after %d retries"),
-				MaxInitializationRetries);
-		}
+		HandleInitializationRetry();
 	}
 }
 
@@ -130,6 +117,46 @@ void UMyAttributeComponent::InitializeGASComponents()
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(
 		EGameplayEffectReplicationMode::Minimal);
+}
+
+bool UMyAttributeComponent::IsAbilitySystemComponentRegistered() const
+{
+	return AbilitySystemComponent && AbilitySystemComponent->IsRegistered();
+}
+
+bool UMyAttributeComponent::IsAbilityActorInfoValid() const
+{
+	return AbilitySystemComponent
+		   && AbilitySystemComponent->AbilityActorInfo.IsValid();
+}
+
+bool UMyAttributeComponent::TryInitializeAbilityActorInfo()
+{
+	if(!IsAbilityActorInfoValid())
+	{
+		AbilitySystemComponent->InitAbilityActorInfo(GetOwner(), GetOwner());
+		return IsAbilityActorInfoValid();
+	}
+	return true;
+}
+
+void UMyAttributeComponent::HandleInitializationRetry()
+{
+	// Still not ready, try again next frame (with a limit to prevent
+	// infinite loops)
+	static int32 RetryCount = 0;
+	if(RetryCount < DefaultValues::MaxInitializationRetries)
+	{
+		RetryCount++;
+		GetWorld()->GetTimerManager().SetTimerForNextTick(
+			this, &UMyAttributeComponent::DeferredInitialize);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error,
+			TEXT("Failed to initialize Ability System after %d retries"),
+			DefaultValues::MaxInitializationRetries);
+	}
 }
 
 void UMyAttributeComponent::InitializeAbilitySystem()
@@ -180,8 +207,15 @@ void UMyAttributeComponent::InitializeAttributes()
 	}
 
 	// Use the SetDefaultAttributes method to set the base values
-	SetDefaultAttributes(
-		DefaultHealth, DefaultMaxHealth, DefaultStamina, DefaultMaxStamina);
+	FDefaultAttributes DefaultAttrs;
+	DefaultAttrs.Health = DefaultHealth;
+	DefaultAttrs.MaxHealth = DefaultMaxHealth;
+	DefaultAttrs.Stamina = DefaultStamina;
+	DefaultAttrs.MaxStamina = DefaultMaxStamina;
+	DefaultAttrs.BaseDamage = DefaultBaseDamage;
+	DefaultAttrs.MaxWalkSpeed = DefaultMaxWalkSpeed;
+
+	SetDefaultAttributes(DefaultAttrs);
 }
 
 void UMyAttributeComponent::GiveDefaultAbilities()
@@ -282,7 +316,7 @@ void UMyAttributeComponent::OnStaminaChange(const FOnAttributeChangeData &Data)
 	if(Data.NewValue <= 0.0f && AbilitySystemComponent
 		&& AbilitySystemComponent->AbilityActorInfo.IsValid()
 		&& AbilitySystemComponent->HasMatchingGameplayTag(
-			FGameplayTag::RequestGameplayTag(FName("State.Sprinting"))))
+			FGameplayTag::RequestGameplayTag(StateTags::Sprinting)))
 	{
 		// Out of stamina - stop sprinting
 		SetSprinting(false);
@@ -297,7 +331,8 @@ void UMyAttributeComponent::HandleDeath()
 	if(Owner)
 	{
 		// Default: destroy actor after a delay
-		Owner->SetLifeSpan(2.0f); // Destroy after 2 seconds
+		Owner->SetLifeSpan(
+			DefaultValues::DeathLifeSpan); // Destroy after 2 seconds
 	}
 }
 
@@ -326,4 +361,33 @@ void UMyAttributeComponent::SetDefaultAttributes(
 	AbilitySystemComponent->ApplyModToAttribute(
 		AttributeSet->GetMaxWalkSpeedAttribute(), EGameplayModOp::Override,
 		DefaultMaxWalkSpeed);
+}
+
+void UMyAttributeComponent::SetDefaultAttributes(
+	const FDefaultAttributes &Attributes)
+{
+	if(!IsAbilitySystemValid() || !AttributeSet)
+	{
+		return;
+	}
+
+	// Use ApplyModToAttribute to set the base values
+	AbilitySystemComponent->ApplyModToAttribute(
+		AttributeSet->GetHealthAttribute(), EGameplayModOp::Override,
+		Attributes.Health);
+	AbilitySystemComponent->ApplyModToAttribute(
+		AttributeSet->GetMaxHealthAttribute(), EGameplayModOp::Override,
+		Attributes.MaxHealth);
+	AbilitySystemComponent->ApplyModToAttribute(
+		AttributeSet->GetStaminaAttribute(), EGameplayModOp::Override,
+		Attributes.Stamina);
+	AbilitySystemComponent->ApplyModToAttribute(
+		AttributeSet->GetMaxStaminaAttribute(), EGameplayModOp::Override,
+		Attributes.MaxStamina);
+	AbilitySystemComponent->ApplyModToAttribute(
+		AttributeSet->GetBaseDamageAttribute(), EGameplayModOp::Override,
+		Attributes.BaseDamage);
+	AbilitySystemComponent->ApplyModToAttribute(
+		AttributeSet->GetMaxWalkSpeedAttribute(), EGameplayModOp::Override,
+		Attributes.MaxWalkSpeed);
 }

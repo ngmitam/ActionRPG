@@ -101,6 +101,12 @@ public:
 	void SetDefaultAttributes(float Health = 100.0f, float MaxHealth = 100.0f,
 		float Stamina = 100.0f, float MaxStamina = 100.0f);
 
+	// Set default attribute values using struct
+	void SetDefaultAttributes(const FDefaultAttributes &Attributes);
+
+	float GetDefaultBaseDamage() const { return DefaultBaseDamage; }
+	float GetDefaultMaxWalkSpeed() const { return DefaultMaxWalkSpeed; }
+
 protected:
 	// Ability System Component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities",
@@ -148,16 +154,23 @@ protected:
 	// Handle attribute changes
 	virtual void OnAttributeChange(const FOnAttributeChangeData &Data);
 	void OnStaminaChange(const FOnAttributeChangeData &Data);
-
-private:
 	// Validate that the owner is properly initialized
 	bool ValidateOwner() const;
 
 	// Initialize GAS components (AttributeSet, replication)
 	void InitializeGASComponents();
 
-	// Maximum number of retry attempts for deferred initialization
-	static constexpr int32 MaxInitializationRetries = 10;
+	// Check if ability system component is registered
+	bool IsAbilitySystemComponentRegistered() const;
+
+	// Check if ability actor info is valid
+	bool IsAbilityActorInfoValid() const;
+
+	// Try to initialize ability actor info
+	bool TryInitializeAbilityActorInfo();
+
+	// Handle initialization retry logic
+	void HandleInitializationRetry();
 
 	bool bIsSprinting = false;
 	bool bIsDodging = false;

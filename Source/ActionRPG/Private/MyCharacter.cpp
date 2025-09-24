@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "MyCharacter.h"
 
 #include "Blueprint/UserWidget.h"
@@ -21,25 +19,29 @@ AMyCharacter::AMyCharacter()
 
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
+	GetCharacterMovement()->RotationRate =
+		FRotator(0.0f, DefaultValues::CharacterRotationRate, 0.0f);
 
 	// Spring Arm Component
 	SpringArmComponent =
-		CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+		CreateDefaultSubobject<USpringArmComponent>(ComponentNames::SpringArm);
 	SpringArmComponent->SetupAttachment(RootComponent);
-	SpringArmComponent->TargetArmLength = 350.0f;
+	SpringArmComponent->TargetArmLength = DefaultValues::SpringArmLength;
 	SpringArmComponent->bUsePawnControlRotation = true;
 
-	SpringArmComponent->SocketOffset = FVector(0.f, 60.f, 70.f);
+	SpringArmComponent->SocketOffset = FVector(
+		DefaultValues::CameraSocketOffsetX, DefaultValues::CameraSocketOffsetY,
+		DefaultValues::CameraSocketOffsetZ);
 
 	SpringArmComponent->bEnableCameraLag = true;
-	SpringArmComponent->CameraLagSpeed = 10.0f;
+	SpringArmComponent->CameraLagSpeed = DefaultValues::CameraLagSpeed;
 
 	SpringArmComponent->bEnableCameraRotationLag = true;
-	SpringArmComponent->CameraRotationLagSpeed = 10.0f;
+	SpringArmComponent->CameraRotationLagSpeed = DefaultValues::CameraLagSpeed;
 
 	// Camera Component
-	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	CameraComponent =
+		CreateDefaultSubobject<UCameraComponent>(ComponentNames::Camera);
 	CameraComponent->SetupAttachment(
 		SpringArmComponent, USpringArmComponent::SocketName);
 	CameraComponent->bUsePawnControlRotation = false;
@@ -61,7 +63,6 @@ void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitializeAttributeComponent();
 	InitializePlayerUI();
 	SetupInputMapping();
 
@@ -76,25 +77,6 @@ void AMyCharacter::BeginPlay()
 	{
 		// Setup input immediately if component is ready
 		SetupPlayerInputComponent(this->InputComponent);
-	}
-}
-
-void AMyCharacter::InitializeAttributeComponent()
-{
-	// Spawn the AttributeComponent from the selected class
-	if(AttributeComponentClass)
-	{
-		if(!AttributeComponent)
-		{
-			// Create AttributeComponent with this character as the owner
-			AttributeComponent =
-				NewObject<UMyAttributeComponent>(this, AttributeComponentClass);
-			if(AttributeComponent)
-			{
-				// Register the component with the character as owner
-				AttributeComponent->RegisterComponent();
-			}
-		}
 	}
 }
 
@@ -213,8 +195,7 @@ void AMyCharacter::StartSprint()
 		return;
 	}
 
-	UAbilitySystemComponent *ASC =
-		AttributeComponent->GetAbilitySystemComponent();
+	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
 
 	AttributeComponent->SetSprinting(true);
 	ASC->AbilityLocalInputPressed(
@@ -231,12 +212,11 @@ void AMyCharacter::StopSprint()
 		return;
 	}
 
-	UAbilitySystemComponent *ASC =
-		AttributeComponent->GetAbilitySystemComponent();
+	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
 
 	FGameplayTagContainer SprintAbilityTagContainer;
 	SprintAbilityTagContainer.AddTag(
-		FGameplayTag::RequestGameplayTag(FName("Ability.Sprint")));
+		FGameplayTag::RequestGameplayTag(AbilityTags::Sprint));
 	ASC->CancelAbilities(&SprintAbilityTagContainer);
 	AttributeComponent->SetSprinting(false);
 }
@@ -253,8 +233,7 @@ void AMyCharacter::Jump()
 		return;
 	}
 
-	UAbilitySystemComponent *ASC =
-		AttributeComponent->GetAbilitySystemComponent();
+	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
 
 	ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Jump));
 }
@@ -269,12 +248,11 @@ void AMyCharacter::StopJumping()
 		return;
 	}
 
-	UAbilitySystemComponent *ASC =
-		AttributeComponent->GetAbilitySystemComponent();
+	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
 
 	FGameplayTagContainer JumpAbilityTagContainer;
 	JumpAbilityTagContainer.AddTag(
-		FGameplayTag::RequestGameplayTag(FName("Ability.Jump")));
+		FGameplayTag::RequestGameplayTag(AbilityTags::Jump));
 	ASC->CancelAbilities(&JumpAbilityTagContainer);
 }
 
@@ -289,8 +267,7 @@ void AMyCharacter::Dodge()
 		return;
 	}
 
-	UAbilitySystemComponent *ASC =
-		AttributeComponent->GetAbilitySystemComponent();
+	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
 
 	AttributeComponent->SetDodging(true);
 	ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Dodge));
@@ -305,17 +282,16 @@ void AMyCharacter::Dodge()
 			{
 				AttributeComponent->SetDodging(false);
 				if(UAbilitySystemComponent *ASCInner =
-						AttributeComponent->GetAbilitySystemComponent())
+						GetAbilitySystemComponent())
 				{
 					FGameplayTagContainer DodgeAbilityTagContainer;
 					DodgeAbilityTagContainer.AddTag(
-						FGameplayTag::RequestGameplayTag(
-							FName("Ability.Dodge")));
+						FGameplayTag::RequestGameplayTag(AbilityTags::Dodge));
 					ASCInner->CancelAbilities(&DodgeAbilityTagContainer);
 				}
 			}
 		},
-		DodgeCooldown, false);
+		DefaultValues::DodgeCooldown, false);
 }
 
 void AMyCharacter::Attack()
@@ -332,8 +308,7 @@ void AMyCharacter::Attack()
 		return;
 	}
 
-	UAbilitySystemComponent *ASC =
-		AttributeComponent->GetAbilitySystemComponent();
+	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
 
 	ASC->AbilityLocalInputPressed(
 		static_cast<int32>(EMyAbilityInputID::Attack));
@@ -363,7 +338,8 @@ void AMyCharacter::Landed(const FHitResult &Hit)
 
 void AMyCharacter::HandleDeath()
 {
-	bIsDead = true;
+	// Call base implementation first
+	AMyBaseCharacter::HandleDeath();
 
 	// Disable input
 	if(APlayerController *PC = Cast<APlayerController>(GetController()))
@@ -371,10 +347,7 @@ void AMyCharacter::HandleDeath()
 		PC->DisableInput(PC);
 	}
 
-	// Disable movement
-	GetCharacterMovement()->DisableMovement();
-
-	// Play death animation
+	// Play death animation with custom logic
 	if(DeathMontage)
 	{
 		USkeletalMeshComponent *SkeletalMesh = GetMesh();
@@ -404,12 +377,6 @@ void AMyCharacter::HandleDeath()
 		// Fallback: ragdoll
 		GetMesh()->SetSimulatePhysics(true);
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-
-		// Call base to destroy after delay
-		if(AttributeComponent)
-		{
-			AttributeComponent->HandleDeath();
-		}
 	}
 }
 
@@ -431,8 +398,7 @@ UMyAttackAbility *AMyCharacter::GetActiveAttackAbility() const
 		return nullptr;
 	}
 
-	UAbilitySystemComponent *ASC =
-		AttributeComponent->GetAbilitySystemComponent();
+	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
 	TArray<FGameplayAbilitySpec> Abilities = ASC->GetActivatableAbilities();
 
 	for(const FGameplayAbilitySpec &Spec : Abilities)

@@ -19,21 +19,20 @@ AMyEnemy::AMyEnemy()
 
 	// Simple movement
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
-	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+	GetCharacterMovement()->RotationRate =
+		FRotator(0.0f, DefaultValues::EnemyRotationRate, 0.0f);
+	GetCharacterMovement()->MaxWalkSpeed = DefaultValues::EnemyMovementSpeed;
 
 	// Create health bar widget component
-	HealthBarWidget =
-		CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidget"));
+	HealthBarWidget = CreateDefaultSubobject<UWidgetComponent>(
+		ComponentNames::HealthBarWidget);
 	HealthBarWidget->SetupAttachment(GetRootComponent());
 	HealthBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
 	HealthBarWidget->SetDrawSize(FVector2D(200.0f, 50.0f));
 	HealthBarWidget->SetRelativeLocation(
 		FVector(0.0f, 0.0f, 100.0f)); // Above the enemy
 
-	// Create AttributeComponent properly
-	AttributeComponent = CreateDefaultSubobject<UMyAttributeComponent>(
-		TEXT("AttributeComponent"));
+	// AttributeComponent is now created in base class
 }
 
 void AMyEnemy::BeginPlay()
@@ -49,18 +48,6 @@ void AMyEnemy::BeginPlay()
 		{
 			NewController->Possess(this);
 		}
-	}
-
-	// AttributeComponent is now created in constructor, just ensure it's ready
-	if(AttributeComponent)
-	{
-		// Don't call InitializeAbilitySystem here - let AttributeComponent
-		// handle its own timing
-		GetWorld()->GetTimerManager().SetTimerForNextTick(
-			this, &AMyEnemy::InitializeDefaultAttributes);
-	}
-	else
-	{
 	}
 
 	// Initialize the health bar widget
@@ -104,16 +91,19 @@ void AMyEnemy::AttackPlayer(ACharacter *Player)
 	if(!Player)
 		return;
 
+	// If already attacking, don't start another attack
+	if(bIsAttacking)
+		return;
+
 	float Distance =
 		FVector::Dist(GetActorLocation(), Player->GetActorLocation());
 	if(Distance <= AttackRange
-		&& GetWorld()->GetTimeSeconds() - LastAttackTime > AttackCooldown
-		&& !bIsAttacking)
+		&& GetWorld()->GetTimeSeconds() - LastAttackTime > AttackCooldown)
 	{
 		LastAttackTime = GetWorld()->GetTimeSeconds();
 		bIsAttacking = true;
 
-		// Play attack animation if available
+		// Play attack montage directly from code
 		if(AttackMontage)
 		{
 			USkeletalMeshComponent *SkeletalMesh = GetMesh();
@@ -123,15 +113,31 @@ void AMyEnemy::AttackPlayer(ACharacter *Player)
 				if(AnimInstance)
 				{
 					AnimInstance->Montage_Stop(0.0f);
+					// Clear previous binding to avoid multiple calls
+					AnimInstance->OnMontageEnded.RemoveDynamic(
+						this, &AMyEnemy::OnAttackMontageEnded);
 					AnimInstance->Montage_Play(AttackMontage);
-					// Bind to montage end
+					// Bind to montage end to reset attack state
 					AnimInstance->OnMontageEnded.AddDynamic(
 						this, &AMyEnemy::OnAttackMontageEnded);
 				}
 			}
 		}
 
-		// Damage is now applied via animation notify
+		// Damage is applied via animation notify
+	}
+}
+
+void AMyEnemy::ResetAttackState()
+{
+	bIsAttacking = false;
+}
+
+void AMyEnemy::OnAttackMontageEnded(UAnimMontage *Montage, bool bInterrupted)
+{
+	if(Montage == AttackMontage)
+	{
+		ResetAttackState();
 	}
 }
 
@@ -143,11 +149,8 @@ UAbilitySystemComponent *AMyEnemy::GetAbilitySystem() const
 
 void AMyEnemy::HandleDeath()
 {
-	// Disable tick
-	SetActorTickEnabled(false);
-
-	// Disable movement
-	GetCharacterMovement()->DisableMovement();
+	// Call base implementation first
+	AMyBaseCharacter::HandleDeath();
 
 	// Stop any abilities
 	if(AttributeComponent && AttributeComponent->GetAbilitySystemComponent())
@@ -155,7 +158,7 @@ void AMyEnemy::HandleDeath()
 		AttributeComponent->GetAbilitySystemComponent()->CancelAllAbilities();
 	}
 
-	// Play death animation
+	// Play death animation with custom logic
 	if(DeathMontage)
 	{
 		USkeletalMeshComponent *SkeletalMesh = GetMesh();
@@ -186,15 +189,9 @@ void AMyEnemy::HandleDeath()
 			}
 		}
 	}
-
-	// Fallback: destroy after delay
-	if(AttributeComponent)
-	{
-		AttributeComponent->HandleDeath();
-	}
 }
 
-void AMyEnemy::OnHealthChanged(float NewHealth)
+void AMyEnemy::OnEnemyHealthChanged(float NewHealth)
 {
 	PreviousHealth = NewHealth;
 	UpdateHealthBar();
@@ -202,29 +199,21 @@ void AMyEnemy::OnHealthChanged(float NewHealth)
 
 void AMyEnemy::InitializeDefaultAttributes()
 {
+	// Call base implementation first
+	AMyBaseCharacter::InitializeDefaultAttributes();
+
+	// Additional enemy-specific initialization
 	if(AttributeComponent && AttributeComponent->GetAbilitySystemComponent()
 		&& AttributeComponent->GetAbilitySystemComponent()
 			   ->AbilityActorInfo.IsValid()
 		&& AttributeComponent->GetAttributeSet())
 	{
-		// Bind to health change delegate now that we're sure GAS is fully
-		// initialized
+		// Bind to health change delegate for enemy-specific logic
 		AttributeComponent->GetOnHealthChanged().AddUObject(
-			this, &AMyEnemy::OnHealthChanged);
-
-		// Use the AttributeComponent's SetDefaultAttributes method instead of
-		// direct access
-		AttributeComponent->SetDefaultAttributes(
-			DefaultHealth, DefaultMaxHealth, DefaultStamina, DefaultMaxStamina);
+			this, &AMyEnemy::OnEnemyHealthChanged);
 
 		// Update health bar after setting attributes
 		UpdateHealthBar();
-	}
-	else
-	{
-		// Try again next frame if not ready
-		GetWorld()->GetTimerManager().SetTimerForNextTick(
-			this, &AMyEnemy::InitializeDefaultAttributes);
 	}
 }
 void AMyEnemy::UpdateHealthBar()
@@ -247,78 +236,5 @@ void AMyEnemy::UpdateHealthBar()
 				HealthProgressBar->SetPercent(HealthPercent);
 			}
 		}
-	}
-}
-
-void AMyEnemy::PlayMovementAnimation(bool bMoving)
-{
-	USkeletalMeshComponent *SkeletalMesh = GetMesh();
-	if(!SkeletalMesh)
-	{
-		return;
-	}
-
-	UAnimInstance *AnimInstance = SkeletalMesh->GetAnimInstance();
-	if(!AnimInstance)
-	{
-		return;
-	}
-
-	// If attack montage is currently playing, don't interrupt
-	UAnimMontage *Current = AnimInstance->GetCurrentActiveMontage();
-	if(Current == AttackMontage)
-	{
-		return;
-	}
-
-	if(bMoving && WalkMontage)
-	{
-		if(!AnimInstance->Montage_IsPlaying(WalkMontage))
-		{
-			// Stop current montage if different
-			if(CurrentMontage && CurrentMontage != WalkMontage)
-			{
-				AnimInstance->Montage_Stop(0.0f);
-			}
-			AnimInstance->Montage_Play(WalkMontage);
-			CurrentMontage = WalkMontage;
-		}
-	}
-	else if(!bMoving && IdleMontage)
-	{
-		if(!AnimInstance->Montage_IsPlaying(IdleMontage))
-		{
-			// Stop current montage if different
-			if(CurrentMontage && CurrentMontage != IdleMontage)
-			{
-				AnimInstance->Montage_Stop(0.0f);
-			}
-			AnimInstance->Montage_Play(IdleMontage);
-			CurrentMontage = IdleMontage;
-		}
-	}
-	else
-	{
-		if(bMoving && !WalkMontage)
-		{
-		}
-		if(!bMoving && !IdleMontage)
-		{
-		}
-		// Stop any playing montage if not moving and no idle
-		if(CurrentMontage)
-		{
-			AnimInstance->Montage_Stop(0.0f);
-			CurrentMontage = nullptr;
-		}
-	}
-}
-
-void AMyEnemy::OnAttackMontageEnded(UAnimMontage *Montage, bool bInterrupted)
-{
-	if(Montage == AttackMontage)
-	{
-		bIsAttacking = false;
-		OnAttackFinished.Broadcast();
 	}
 }

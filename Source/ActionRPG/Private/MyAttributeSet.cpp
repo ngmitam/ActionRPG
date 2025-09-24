@@ -59,8 +59,8 @@ void UMyAttributeSet::PostGameplayEffectExecute(
 		{
 			// Death
 			AActor *Owner = GetOwningActor();
-			AMyCharacter *Character = Cast<AMyCharacter>(Owner);
-			if(Character && !Character->IsDead())
+			AMyBaseCharacter *Character = Cast<AMyBaseCharacter>(Owner);
+			if(Character && !Character->bIsDead)
 			{
 				Character->HandleDeath();
 			}
