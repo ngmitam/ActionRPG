@@ -68,6 +68,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
 	UMyAttributeComponent *AttributeComponent;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+	TSubclassOf<UMyAttributeComponent> AttributeComponentClass =
+		UMyAttributeComponent::StaticClass();
+
 	// Default attribute values
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
 	float DefaultHealth = DefaultValues::DefaultHealth;

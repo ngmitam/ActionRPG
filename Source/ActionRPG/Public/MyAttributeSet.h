@@ -63,6 +63,12 @@ public:
 	FGameplayAttributeData MaxWalkSpeed;
 	ATTRIBUTE_ACCESSORS(UMyAttributeSet, MaxWalkSpeed);
 
+	// Stun Duration
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes | Stun",
+		ReplicatedUsing = OnRep_StunDuration)
+	FGameplayAttributeData StunDuration;
+	ATTRIBUTE_ACCESSORS(UMyAttributeSet, StunDuration);
+
 	UFUNCTION()
 	void OnRep_Health(const FGameplayAttributeData &OldHealth);
 
@@ -80,4 +86,11 @@ public:
 
 	UFUNCTION()
 	void OnRep_MaxWalkSpeed(const FGameplayAttributeData &OldMaxWalkSpeed);
+
+	UFUNCTION()
+	void OnRep_StunDuration(const FGameplayAttributeData &OldStunDuration);
+
+	// Delegate for stun duration changes
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnStunDurationChanged, float);
+	FOnStunDurationChanged OnStunDurationChanged;
 };

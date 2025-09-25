@@ -195,7 +195,7 @@ void AMyCharacter::StartSprint()
 		return;
 	}
 
-	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
+	UAbilitySystemComponent *ASC = GetAbilitySystem();
 
 	AttributeComponent->SetSprinting(true);
 	ASC->AbilityLocalInputPressed(
@@ -212,7 +212,7 @@ void AMyCharacter::StopSprint()
 		return;
 	}
 
-	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
+	UAbilitySystemComponent *ASC = GetAbilitySystem();
 
 	FGameplayTagContainer SprintAbilityTagContainer;
 	SprintAbilityTagContainer.AddTag(
@@ -233,7 +233,7 @@ void AMyCharacter::Jump()
 		return;
 	}
 
-	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
+	UAbilitySystemComponent *ASC = GetAbilitySystem();
 
 	ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Jump));
 }
@@ -248,7 +248,7 @@ void AMyCharacter::StopJumping()
 		return;
 	}
 
-	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
+	UAbilitySystemComponent *ASC = GetAbilitySystem();
 
 	FGameplayTagContainer JumpAbilityTagContainer;
 	JumpAbilityTagContainer.AddTag(
@@ -267,7 +267,7 @@ void AMyCharacter::Dodge()
 		return;
 	}
 
-	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
+	UAbilitySystemComponent *ASC = GetAbilitySystem();
 
 	AttributeComponent->SetDodging(true);
 	ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Dodge));
@@ -281,8 +281,7 @@ void AMyCharacter::Dodge()
 			if(AttributeComponent)
 			{
 				AttributeComponent->SetDodging(false);
-				if(UAbilitySystemComponent *ASCInner =
-						GetAbilitySystemComponent())
+				if(UAbilitySystemComponent *ASCInner = GetAbilitySystem())
 				{
 					FGameplayTagContainer DodgeAbilityTagContainer;
 					DodgeAbilityTagContainer.AddTag(
@@ -296,19 +295,65 @@ void AMyCharacter::Dodge()
 
 void AMyCharacter::Attack()
 {
+
 	if(!IsAttributeSystemValid())
 	{
+
+		if(AttributeComponent)
+		{
+		}
+		return;
+	}
+
+	UAbilitySystemComponent *ASC = GetAbilitySystem();
+	if(!ASC)
+	{
+
+		return;
+	}
+
+	// Log all granted abilities
+	TArray<FGameplayAbilitySpecHandle> GrantedHandles;
+	ASC->GetAllAbilities(GrantedHandles);
+
+	for(const FGameplayAbilitySpecHandle &Handle : GrantedHandles)
+	{
+		FGameplayAbilitySpec *Spec = ASC->FindAbilitySpecFromHandle(Handle);
+		if(Spec)
+		{
+		}
+	}
+
+	// Check if attack ability is granted
+	TArray<FGameplayAbilitySpec> Abilities = ASC->GetActivatableAbilities();
+
+	bool bHasAttackAbility = false;
+	for(const FGameplayAbilitySpec &Spec : Abilities)
+	{
+
+		if(Spec.Ability
+			&& Spec.Ability->GetClass()->IsChildOf(
+				UMyAttackAbility::StaticClass()))
+		{
+			bHasAttackAbility = true;
+
+			break;
+		}
+	}
+
+	if(!bHasAttackAbility)
+	{
+
 		return;
 	}
 
 	UMyAttackAbility *ActiveAbility = GetActiveAttackAbility();
 	if(ActiveAbility)
 	{
+
 		ActiveAbility->OnAttackInputPressed();
 		return;
 	}
-
-	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
 
 	ASC->AbilityLocalInputPressed(
 		static_cast<int32>(EMyAbilityInputID::Attack));
@@ -398,7 +443,7 @@ UMyAttackAbility *AMyCharacter::GetActiveAttackAbility() const
 		return nullptr;
 	}
 
-	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
+	UAbilitySystemComponent *ASC = GetAbilitySystem();
 	TArray<FGameplayAbilitySpec> Abilities = ASC->GetActivatableAbilities();
 
 	for(const FGameplayAbilitySpec &Spec : Abilities)

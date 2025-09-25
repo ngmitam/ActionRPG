@@ -52,14 +52,21 @@ void AMyEnemy::BeginPlay()
 
 	// Initialize the health bar widget
 	InitializeHealthBar();
+
+	// Update health bar with initial values
+	UpdateHealthBar();
 }
 
 void AMyEnemy::InitializeHealthBar()
 {
+
 	// Set health bar widget class (set in Blueprint)
 	if(HealthBarWidget && HealthBarWidgetClass)
 	{
 		HealthBarWidget->SetWidgetClass(HealthBarWidgetClass);
+	}
+	else
+	{
 	}
 
 	// Don't bind to health change delegate here - wait until GAS is fully
@@ -102,6 +109,15 @@ void AMyEnemy::AttackPlayer(ACharacter *Player)
 	{
 		LastAttackTime = GetWorld()->GetTimeSeconds();
 		bIsAttacking = true;
+
+		// Face the player before attacking
+		FVector Direction = Player->GetActorLocation() - GetActorLocation();
+		Direction.Z = 0.0f; // Keep on ground
+		if(!Direction.IsNearlyZero())
+		{
+			FRotator NewRotation = Direction.Rotation();
+			SetActorRotation(NewRotation);
+		}
 
 		// Play attack montage directly from code
 		if(AttackMontage)
@@ -149,76 +165,63 @@ UAbilitySystemComponent *AMyEnemy::GetAbilitySystem() const
 
 void AMyEnemy::HandleDeath()
 {
-	// Call base implementation first
-	AMyBaseCharacter::HandleDeath();
+	SetActorTickEnabled(false);
+	GetCharacterMovement()->DisableMovement();
 
-	// Stop any abilities
-	if(AttributeComponent && AttributeComponent->GetAbilitySystemComponent())
-	{
-		AttributeComponent->GetAbilitySystemComponent()->CancelAllAbilities();
-	}
+	// Set dead state for animation blueprint
+	bIsDead = true;
 
-	// Play death animation with custom logic
-	if(DeathMontage)
-	{
-		USkeletalMeshComponent *SkeletalMesh = GetMesh();
-		if(SkeletalMesh)
-		{
-			UAnimInstance *AnimInstance = SkeletalMesh->GetAnimInstance();
-			if(AnimInstance)
-			{
-				AnimInstance->Montage_Play(DeathMontage);
-				// Set timer to destroy after animation
-				float Duration =
-					AnimInstance->Montage_GetPlayRate(DeathMontage) > 0.0f
-						? DeathMontage->GetPlayLength()
-							  / AnimInstance->Montage_GetPlayRate(DeathMontage)
-						: DeathMontage->GetPlayLength();
-				FTimerHandle DeathTimer;
-				GetWorld()->GetTimerManager().SetTimer(
-					DeathTimer,
-					[this]()
-					{
-						if(AttributeComponent)
-						{
-							AttributeComponent->HandleDeath();
-						}
-					},
-					Duration, false);
-				return; // Don't destroy immediately
-			}
-		}
-	}
+	// If no death animation, destroy after delay
+	FTimerHandle DeathTimer;
+	GetWorld()->GetTimerManager().SetTimer(
+		DeathTimer, [this]() { Destroy(); }, DeathDelay, false);
 }
 
 void AMyEnemy::OnEnemyHealthChanged(float NewHealth)
 {
+
 	PreviousHealth = NewHealth;
 	UpdateHealthBar();
 }
 
+void AMyEnemy::ApplyDamage(float DamageAmount)
+{
+	Health = FMath::Max(0.0f, Health - DamageAmount);
+	UpdateHealthBar();
+
+	if(Health <= 0.0f)
+	{
+		// Death clears stun
+		SetStunned(false);
+		HandleDeath();
+	}
+	else
+	{
+		// Stun when taking damage but not dead
+		SetStunned(true);
+		// Reset stun after duration
+		FTimerHandle StunTimer;
+		GetWorld()->GetTimerManager().SetTimer(
+			StunTimer, [this]() { SetStunned(false); }, StunDuration, false);
+	}
+}
+
+void AMyEnemy::SetStunned(bool bStunned)
+{
+	bIsStunned = bStunned;
+
+	// Disable movement while stunned
+	GetCharacterMovement()->SetMovementMode(
+		bIsStunned ? MOVE_None : MOVE_Walking);
+}
+
 void AMyEnemy::InitializeDefaultAttributes()
 {
-	// Call base implementation first
-	AMyBaseCharacter::InitializeDefaultAttributes();
-
-	// Additional enemy-specific initialization
-	if(AttributeComponent && AttributeComponent->GetAbilitySystemComponent()
-		&& AttributeComponent->GetAbilitySystemComponent()
-			   ->AbilityActorInfo.IsValid()
-		&& AttributeComponent->GetAttributeSet())
-	{
-		// Bind to health change delegate for enemy-specific logic
-		AttributeComponent->GetOnHealthChanged().AddUObject(
-			this, &AMyEnemy::OnEnemyHealthChanged);
-
-		// Update health bar after setting attributes
-		UpdateHealthBar();
-	}
+	// Enemy uses simple health, no GAS needed
 }
 void AMyEnemy::UpdateHealthBar()
 {
-	if(HealthBarWidget && AttributeComponent)
+	if(HealthBarWidget)
 	{
 		UUserWidget *Widget = HealthBarWidget->GetUserWidgetObject();
 		if(Widget)
@@ -228,13 +231,20 @@ void AMyEnemy::UpdateHealthBar()
 				Widget->GetWidgetFromName(TEXT("HealthBar")));
 			if(HealthProgressBar)
 			{
-				float CurrentHealth = AttributeComponent->GetHealth();
-				float MaxHealth = AttributeComponent->GetMaxHealth();
 				float HealthPercent =
-					(MaxHealth > 0.0f) ? (CurrentHealth / MaxHealth) : 0.0f;
+					(MaxHealth > 0.0f) ? (Health / MaxHealth) : 0.0f;
 
 				HealthProgressBar->SetPercent(HealthPercent);
 			}
+			else
+			{
+			}
 		}
+		else
+		{
+		}
+	}
+	else
+	{
 	}
 }

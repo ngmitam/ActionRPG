@@ -24,7 +24,7 @@ void UMyAnimNotify_AttackDamage::Notify(USkeletalMeshComponent *MeshComp,
 	}
 
 	AActor *OwnerActor = MeshComp->GetOwner();
-	if(!OwnerActor)
+	if(!OwnerActor || !OwnerActor->IsValidLowLevel())
 	{
 		return;
 	}
@@ -51,14 +51,7 @@ void UMyAnimNotify_AttackDamage::PerformTraceAndApplyDamage(AActor *OwnerActor)
 	{
 		ASC = MyChar->GetAbilitySystem();
 	}
-	else if(AMyEnemy *Enemy = Cast<AMyEnemy>(Character))
-	{
-		ASC = Enemy->GetAbilitySystem();
-	}
-	if(!ASC)
-	{
-		return;
-	}
+	// Enemy doesn't use GAS for attacks
 
 	// Calculate trace start and end
 	FVector StartLocation =
@@ -81,38 +74,50 @@ void UMyAnimNotify_AttackDamage::PerformTraceAndApplyDamage(AActor *OwnerActor)
 		for(const FHitResult &Hit : HitResults)
 		{
 			AActor *HitActor = Hit.GetActor();
+
 			if(HitActor
 				&& (HitActor->IsA(AMyCharacter::StaticClass())
 					|| HitActor->IsA(AMyEnemy::StaticClass())))
 			{
+
 				// Apply damage
-				TSubclassOf<UGameplayEffect> EffectToUse =
-					DamageEffectClass ? DamageEffectClass
-									  : TSubclassOf<UGameplayEffect>(
-											UMyDamageEffect::StaticClass());
-
-				FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(
-					EffectToUse, 1.0f, FGameplayEffectContextHandle());
-				if(SpecHandle.IsValid())
+				if(AMyEnemy *Enemy = Cast<AMyEnemy>(HitActor))
 				{
-					SpecHandle.Data->SetSetByCallerMagnitude(
-						FGameplayTag::RequestGameplayTag(FName("Data.Damage")),
-						DamageAmount);
-
-					UAbilitySystemComponent *TargetASC = nullptr;
-					if(AMyCharacter *Char = Cast<AMyCharacter>(HitActor))
-					{
-						TargetASC = Char->GetAbilitySystem();
-					}
-					else if(AMyEnemy *Enemy = Cast<AMyEnemy>(HitActor))
-					{
-						TargetASC = Enemy->GetAbilitySystem();
-					}
-
+					// For Enemy, use simple damage
+					Enemy->ApplyDamage(DamageAmount);
+				}
+				else if(AMyCharacter *Player = Cast<AMyCharacter>(HitActor))
+				{
+					// For Player, use GAS
+					UAbilitySystemComponent *TargetASC =
+						Player->GetAbilitySystem();
 					if(TargetASC)
 					{
-						ASC->ApplyGameplayEffectSpecToTarget(
-							*SpecHandle.Data.Get(), TargetASC);
+						TSubclassOf<UGameplayEffect> EffectToUse =
+							DamageEffectClass
+								? DamageEffectClass
+								: TSubclassOf<UGameplayEffect>(
+									  UMyDamageEffect::StaticClass());
+
+						FGameplayEffectSpecHandle SpecHandle =
+							TargetASC->MakeOutgoingSpec(EffectToUse, 1.0f,
+								FGameplayEffectContextHandle());
+						if(SpecHandle.IsValid())
+						{
+							SpecHandle.Data->SetSetByCallerMagnitude(
+								FGameplayTag::RequestGameplayTag(
+									FName("Data.Damage")),
+								-DamageAmount);
+
+							TargetASC->ApplyGameplayEffectSpecToTarget(
+								*SpecHandle.Data.Get(), TargetASC);
+						}
+						else
+						{
+						}
+					}
+					else
+					{
 					}
 				}
 				break; // Apply to first hit

@@ -9,14 +9,32 @@ AMyBaseCharacter::AMyBaseCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Create AttributeComponent
-	AttributeComponent = CreateDefaultSubobject<UMyAttributeComponent>(
-		ComponentNames::AttributeComponent);
+	// AttributeComponent will be created dynamically in BeginPlay to allow
+	// Blueprint subclasses
 }
 
 void AMyBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Create AttributeComponent dynamically to allow Blueprint subclasses
+	if(!AttributeComponent)
+	{
+		UClass *ComponentClass = AttributeComponentClass.Get();
+		if(!ComponentClass)
+		{
+			ComponentClass = UMyAttributeComponent::StaticClass();
+		}
+		AttributeComponent =
+			NewObject<UMyAttributeComponent>(this, ComponentClass);
+		if(AttributeComponent)
+		{
+			AttributeComponent->RegisterComponent();
+		}
+		else
+		{
+		}
+	}
 
 	// Initialize attribute component
 	InitializeAttributeComponent();

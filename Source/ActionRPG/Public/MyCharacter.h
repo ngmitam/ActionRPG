@@ -110,9 +110,6 @@ protected:
 	void Dodge();
 	void Attack();
 
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Attributes")
-	TSubclassOf<UMyAttributeComponent> AttributeComponentClass;
-
 	// Player UI Class
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UMyPlayerUI> PlayerUIClass;

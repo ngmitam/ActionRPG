@@ -151,12 +151,6 @@ void UMyAttributeComponent::HandleInitializationRetry()
 		GetWorld()->GetTimerManager().SetTimerForNextTick(
 			this, &UMyAttributeComponent::DeferredInitialize);
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error,
-			TEXT("Failed to initialize Ability System after %d retries"),
-			DefaultValues::MaxInitializationRetries);
-	}
 }
 
 void UMyAttributeComponent::InitializeAbilitySystem()
@@ -222,6 +216,7 @@ void UMyAttributeComponent::GiveDefaultAbilities()
 {
 	if(!IsAbilitySystemValid() || !GetOwner()->HasAuthority())
 	{
+
 		return;
 	}
 
@@ -231,6 +226,7 @@ void UMyAttributeComponent::GiveDefaultAbilities()
 
 		if(!Ability)
 		{
+
 			continue;
 		}
 
@@ -238,19 +234,23 @@ void UMyAttributeComponent::GiveDefaultAbilities()
 		UMyGameplayAbility *AbilityCDO = Ability.GetDefaultObject();
 		if(!AbilityCDO)
 		{
+
 			continue;
 		}
 
 		// Validate AbilityInputID
 		int32 InputID = static_cast<int32>(AbilityCDO->AbilityInputID);
+
 		if(InputID < 0)
 		{
+
 			continue;
 		}
 
 		// Safely give the ability
 		FGameplayAbilitySpec AbilitySpec(Ability, 1, InputID, GetOwner());
-		AbilitySystemComponent->GiveAbility(AbilitySpec);
+		FGameplayAbilitySpecHandle Handle =
+			AbilitySystemComponent->GiveAbility(AbilitySpec);
 	}
 }
 
@@ -282,6 +282,11 @@ float UMyAttributeComponent::GetBaseDamage() const
 float UMyAttributeComponent::GetMaxWalkSpeed() const
 {
 	return AttributeSet ? AttributeSet->GetMaxWalkSpeed() : 0.0f;
+}
+
+float UMyAttributeComponent::GetStunDuration() const
+{
+	return AttributeSet ? AttributeSet->GetStunDuration() : 0.0f;
 }
 
 void UMyAttributeComponent::OnAttributeChange(

@@ -63,6 +63,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Attributes")
 	float GetMaxWalkSpeed() const;
 
+	UFUNCTION(BlueprintPure, Category = "Attributes")
+	float GetStunDuration() const;
+
 	// Public getter for sprint status
 	UFUNCTION(BlueprintPure, Category = "Character State")
 	bool IsSprinting() const { return bIsSprinting; }

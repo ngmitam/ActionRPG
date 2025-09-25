@@ -43,6 +43,22 @@ public:
 	// Handle enemy-specific health changes
 	void OnEnemyHealthChanged(float NewHealth);
 
+	// Handle stun duration changes
+	void OnStunDurationChanged(float NewStunDuration);
+
+	// Simple health accessors (not using GAS)
+	UFUNCTION(BlueprintPure, Category = "Attributes")
+	float GetHealth() const { return Health; }
+
+	UFUNCTION(BlueprintPure, Category = "Attributes")
+	float GetMaxHealth() const { return MaxHealth; }
+
+	// Apply damage
+	void ApplyDamage(float DamageAmount);
+
+	// Set stun state (for animation)
+	void SetStunned(bool bStunned);
+
 	// Initialize default attributes
 	void InitializeDefaultAttributes() override;
 
@@ -69,12 +85,30 @@ public:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UUserWidget> HealthBarWidgetClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+	float Health = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+	float MaxHealth = 100.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimMontage *AttackMontage;
 
 	// Animation state variables for ABP
 	UPROPERTY(BlueprintReadOnly, Category = "Animation")
 	bool bIsAttacking = false;
+
+	// Stun state for animation blueprint
+	UPROPERTY(BlueprintReadOnly, Category = "Animation")
+	bool bIsStunned = false;
+
+	// Stun duration when taking damage
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float StunDuration = 2.0f;
+
+	// Delay before destroying after death animation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float DeathDelay = 5.0f;
 
 private:
 	// Montage end callback

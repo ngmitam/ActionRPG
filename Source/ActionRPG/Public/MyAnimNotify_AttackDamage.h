@@ -24,10 +24,10 @@ public:
 
 	// Trace properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack")
-	float TraceLength = 200.0f;
+	float TraceLength = 50.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack")
-	float TraceRadius = 50.0f;
+	float TraceRadius = 10.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack")
 	FVector TraceOffset =
