@@ -12,6 +12,8 @@
 #include "MyPlayerUI.h"
 #include "MyCharacter.generated.h"
 
+class AMyEnemy;
+
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
@@ -59,6 +61,19 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Character State")
 	int32 GetCurrentComboIndex() const;
 
+	// Targeting functions
+	UFUNCTION(BlueprintPure, Category = "Targeting")
+	bool IsEnemyInFocusRange(AMyEnemy *Enemy) const
+	{
+		return NearbyEnemies.Contains(Enemy);
+	}
+
+	UFUNCTION(BlueprintPure, Category = "Targeting")
+	bool IsEnemyFocused(AMyEnemy *Enemy) const
+	{
+		return CurrentTarget == Enemy;
+	}
+
 	// Handle death - override from base class
 	virtual void HandleDeath() override;
 
@@ -100,6 +115,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction *AttackAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction *FocusEnemyAction;
+
 	// INPUT HANDLERS
 	void Move(const FInputActionValue &Value);
 	void Look(const FInputActionValue &Value);
@@ -109,6 +127,7 @@ protected:
 	void StopJumping();
 	void Dodge();
 	void Attack();
+	void FocusEnemy();
 
 	// Player UI Class
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "UI")
@@ -137,4 +156,14 @@ private:
 
 	// Helper to get the active attack ability
 	UMyAttackAbility *GetActiveAttackAbility() const;
+
+	// Enemy targeting
+	AMyEnemy *CurrentTarget;
+	TArray<AMyEnemy *> NearbyEnemies;
+	TArray<AMyEnemy *> PreviousNearbyEnemies;
+	bool bCameraLocked;
+	FTimerHandle UpdateEnemiesTimerHandle;
+
+	void UpdateNearbyEnemies();
+	void CycleTarget();
 };

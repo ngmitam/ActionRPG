@@ -59,6 +59,9 @@ public:
 	// Set stun state (for animation)
 	void SetStunned(bool bStunned);
 
+	// Set health bar visibility
+	void SetHealthBarVisible(bool bVisible);
+
 	// Initialize default attributes
 	void InitializeDefaultAttributes() override;
 

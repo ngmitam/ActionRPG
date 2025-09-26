@@ -112,12 +112,6 @@ void UMyAnimNotify_AttackDamage::PerformTraceAndApplyDamage(AActor *OwnerActor)
 							TargetASC->ApplyGameplayEffectSpecToTarget(
 								*SpecHandle.Data.Get(), TargetASC);
 						}
-						else
-						{
-						}
-					}
-					else
-					{
 					}
 				}
 				break; // Apply to first hit

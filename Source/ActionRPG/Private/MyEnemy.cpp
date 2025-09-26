@@ -30,7 +30,8 @@ AMyEnemy::AMyEnemy()
 	HealthBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
 	HealthBarWidget->SetDrawSize(FVector2D(200.0f, 50.0f));
 	HealthBarWidget->SetRelativeLocation(
-		FVector(0.0f, 0.0f, 100.0f)); // Above the enemy
+		FVector(0.0f, 0.0f, 100.0f));	   // Above the enemy
+	HealthBarWidget->SetVisibility(false); // Hidden by default
 
 	// AttributeComponent is now created in base class
 }
@@ -59,19 +60,11 @@ void AMyEnemy::BeginPlay()
 
 void AMyEnemy::InitializeHealthBar()
 {
-
 	// Set health bar widget class (set in Blueprint)
 	if(HealthBarWidget && HealthBarWidgetClass)
 	{
 		HealthBarWidget->SetWidgetClass(HealthBarWidgetClass);
 	}
-	else
-	{
-	}
-
-	// Don't bind to health change delegate here - wait until GAS is fully
-	// initialized The binding will be done in InitializeDefaultAttributes when
-	// we're sure everything is ready
 }
 
 void AMyEnemy::Tick(float DeltaTime)
@@ -215,6 +208,18 @@ void AMyEnemy::SetStunned(bool bStunned)
 		bIsStunned ? MOVE_None : MOVE_Walking);
 }
 
+void AMyEnemy::SetHealthBarVisible(bool bVisible)
+{
+	if(HealthBarWidget)
+	{
+		if(bVisible)
+		{
+			UpdateHealthBar();
+		}
+		HealthBarWidget->SetVisibility(bVisible);
+	}
+}
+
 void AMyEnemy::InitializeDefaultAttributes()
 {
 	// Enemy uses simple health, no GAS needed
@@ -236,15 +241,6 @@ void AMyEnemy::UpdateHealthBar()
 
 				HealthProgressBar->SetPercent(HealthPercent);
 			}
-			else
-			{
-			}
 		}
-		else
-		{
-		}
-	}
-	else
-	{
 	}
 }

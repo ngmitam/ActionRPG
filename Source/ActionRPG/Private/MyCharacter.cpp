@@ -2,11 +2,14 @@
 
 #include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
+#include "CollisionShape.h"
+#include "Engine/OverlapResult.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "MyAttributeComponent.h"
+#include "MyEnemy.h"
 #include "MyPlayerUI.h"
 
 AMyCharacter::AMyCharacter()
@@ -66,6 +69,10 @@ void AMyCharacter::BeginPlay()
 	InitializePlayerUI();
 	SetupInputMapping();
 
+	// Start updating nearby enemies
+	GetWorld()->GetTimerManager().SetTimer(UpdateEnemiesTimerHandle, this,
+		&AMyCharacter::UpdateNearbyEnemies, 1.0f, true);
+
 	// Ensure AttributeComponent is ready before proceeding
 	if(!IsAttributeSystemValid())
 	{
@@ -120,6 +127,19 @@ void AMyCharacter::SetupInputMapping()
 void AMyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// Update camera lock
+	if(bCameraLocked && CurrentTarget)
+	{
+		FVector Direction =
+			(CurrentTarget->GetActorLocation() - GetActorLocation())
+				.GetSafeNormal();
+		FRotator TargetRotation = Direction.Rotation();
+		if(Controller)
+		{
+			Controller->SetControlRotation(TargetRotation);
+		}
+	}
 }
 
 void AMyCharacter::SetupPlayerInputComponent(
@@ -146,6 +166,8 @@ void AMyCharacter::SetupPlayerInputComponent(
 			DodgeAction, ETriggerEvent::Started, this, &AMyCharacter::Dodge);
 		EnhancedInputComponent->BindAction(
 			AttackAction, ETriggerEvent::Started, this, &AMyCharacter::Attack);
+		EnhancedInputComponent->BindAction(FocusEnemyAction,
+			ETriggerEvent::Started, this, &AMyCharacter::FocusEnemy);
 	}
 }
 
@@ -173,7 +195,7 @@ void AMyCharacter::Move(const FInputActionValue &Value)
 
 void AMyCharacter::Look(const FInputActionValue &Value)
 {
-	if(IsAttacking())
+	if(IsAttacking() || bCameraLocked)
 		return;
 
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -295,20 +317,14 @@ void AMyCharacter::Dodge()
 
 void AMyCharacter::Attack()
 {
-
 	if(!IsAttributeSystemValid())
 	{
-
-		if(AttributeComponent)
-		{
-		}
 		return;
 	}
 
 	UAbilitySystemComponent *ASC = GetAbilitySystem();
 	if(!ASC)
 	{
-
 		return;
 	}
 
@@ -319,9 +335,6 @@ void AMyCharacter::Attack()
 	for(const FGameplayAbilitySpecHandle &Handle : GrantedHandles)
 	{
 		FGameplayAbilitySpec *Spec = ASC->FindAbilitySpecFromHandle(Handle);
-		if(Spec)
-		{
-		}
 	}
 
 	// Check if attack ability is granted
@@ -330,27 +343,23 @@ void AMyCharacter::Attack()
 	bool bHasAttackAbility = false;
 	for(const FGameplayAbilitySpec &Spec : Abilities)
 	{
-
 		if(Spec.Ability
 			&& Spec.Ability->GetClass()->IsChildOf(
 				UMyAttackAbility::StaticClass()))
 		{
 			bHasAttackAbility = true;
-
 			break;
 		}
 	}
 
 	if(!bHasAttackAbility)
 	{
-
 		return;
 	}
 
 	UMyAttackAbility *ActiveAbility = GetActiveAttackAbility();
 	if(ActiveAbility)
 	{
-
 		ActiveAbility->OnAttackInputPressed();
 		return;
 	}
@@ -460,4 +469,108 @@ UMyAttackAbility *AMyCharacter::GetActiveAttackAbility() const
 	}
 
 	return nullptr;
+}
+
+void AMyCharacter::UpdateNearbyEnemies()
+{
+	PreviousNearbyEnemies = NearbyEnemies;
+	NearbyEnemies.Empty();
+	TArray<FOverlapResult> OverlapResults;
+	FCollisionShape Sphere =
+		FCollisionShape::MakeSphere(1000.0f); // 10 meter radius
+	GetWorld()->OverlapMultiByObjectType(OverlapResults, GetActorLocation(),
+		FQuat::Identity, FCollisionObjectQueryParams(ECC_Pawn), Sphere);
+
+	for(const FOverlapResult &Result : OverlapResults)
+	{
+		if(AMyEnemy *Enemy = Cast<AMyEnemy>(Result.GetActor()))
+		{
+			NearbyEnemies.Add(Enemy);
+		}
+	}
+
+	// Sort by distance
+	NearbyEnemies.Sort(
+		[this](const AMyEnemy &A, const AMyEnemy &B)
+		{
+			float DistA =
+				FVector::DistSquared(GetActorLocation(), A.GetActorLocation());
+			float DistB =
+				FVector::DistSquared(GetActorLocation(), B.GetActorLocation());
+			return DistA < DistB;
+		});
+
+	// Update health bar visibility
+	for(AMyEnemy *Enemy : PreviousNearbyEnemies)
+	{
+		if(!NearbyEnemies.Contains(Enemy) && Enemy != CurrentTarget)
+		{
+			Enemy->SetHealthBarVisible(false);
+		}
+	}
+
+	for(AMyEnemy *Enemy : NearbyEnemies)
+	{
+		if(Enemy != CurrentTarget)
+		{
+			Enemy->SetHealthBarVisible(true);
+		}
+	}
+}
+
+void AMyCharacter::FocusEnemy()
+{
+	if(NearbyEnemies.Num() == 0)
+	{
+		CurrentTarget = nullptr;
+		bCameraLocked = false;
+		return;
+	}
+
+	CycleTarget();
+}
+
+void AMyCharacter::CycleTarget()
+{
+	AMyEnemy *OldTarget = CurrentTarget;
+
+	if(NearbyEnemies.Num() == 0)
+	{
+		CurrentTarget = nullptr;
+		bCameraLocked = false;
+		if(OldTarget)
+		{
+			if(!NearbyEnemies.Contains(OldTarget))
+			{
+				OldTarget->SetHealthBarVisible(false);
+			}
+		}
+		return;
+	}
+
+	int32 CurrentIndex = NearbyEnemies.Find(CurrentTarget);
+	if(CurrentIndex == INDEX_NONE)
+	{
+		CurrentTarget = NearbyEnemies[0];
+	}
+	else
+	{
+		int32 NextIndex = (CurrentIndex + 1) % NearbyEnemies.Num();
+		CurrentTarget = NearbyEnemies[NextIndex];
+	}
+
+	// Update visibility
+	if(OldTarget && OldTarget != CurrentTarget)
+	{
+		if(!NearbyEnemies.Contains(OldTarget))
+		{
+			OldTarget->SetHealthBarVisible(false);
+		}
+	}
+
+	if(CurrentTarget)
+	{
+		CurrentTarget->SetHealthBarVisible(true);
+		bCameraLocked = true;
+	}
 }

@@ -31,9 +31,6 @@ void AMyBaseCharacter::BeginPlay()
 		{
 			AttributeComponent->RegisterComponent();
 		}
-		else
-		{
-		}
 	}
 
 	// Initialize attribute component

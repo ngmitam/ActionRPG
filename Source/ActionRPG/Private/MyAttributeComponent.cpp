@@ -216,7 +216,6 @@ void UMyAttributeComponent::GiveDefaultAbilities()
 {
 	if(!IsAbilitySystemValid() || !GetOwner()->HasAuthority())
 	{
-
 		return;
 	}
 
@@ -226,7 +225,6 @@ void UMyAttributeComponent::GiveDefaultAbilities()
 
 		if(!Ability)
 		{
-
 			continue;
 		}
 
@@ -234,7 +232,6 @@ void UMyAttributeComponent::GiveDefaultAbilities()
 		UMyGameplayAbility *AbilityCDO = Ability.GetDefaultObject();
 		if(!AbilityCDO)
 		{
-
 			continue;
 		}
 
@@ -243,7 +240,6 @@ void UMyAttributeComponent::GiveDefaultAbilities()
 
 		if(InputID < 0)
 		{
-
 			continue;
 		}
 

@@ -153,43 +153,40 @@ void UMyAttackAbility::ApplyDamageEffect()
 		DamageEffectToUse = UMyDamageEffect::StaticClass();
 	}
 
-	if(DamageEffectToUse)
+	FGameplayAbilitySpecHandle Handle = GetCurrentAbilitySpecHandle();
+	const FGameplayAbilityActorInfo *ActorInfo = GetCurrentActorInfo();
+	const FGameplayAbilityActivationInfo ActivationInfo =
+		GetCurrentActivationInfo();
+
+	// Find target (enemy in range)
+	AActor *Target = FindTargetInRange();
+	if(Target)
 	{
-		FGameplayAbilitySpecHandle Handle = GetCurrentAbilitySpecHandle();
-		const FGameplayAbilityActorInfo *ActorInfo = GetCurrentActorInfo();
-		const FGameplayAbilityActivationInfo ActivationInfo =
-			GetCurrentActivationInfo();
-
-		// Find target (enemy in range)
-		AActor *Target = FindTargetInRange();
-		if(Target)
+		// Apply to target
+		FGameplayEffectSpecHandle DamageSpecHandle =
+			GetAbilitySystemComponentFromActorInfo()->MakeOutgoingSpec(
+				DamageEffectToUse, GetAbilityLevel(Handle, ActorInfo),
+				FGameplayEffectContextHandle());
+		if(DamageSpecHandle.IsValid())
 		{
+			// Create target data
+			FGameplayAbilityTargetData_SingleTargetHit *TargetData =
+				new FGameplayAbilityTargetData_SingleTargetHit();
+			TargetData->HitResult = FHitResult(
+				Target, nullptr, FVector::ZeroVector, FVector::ZeroVector);
+			FGameplayAbilityTargetDataHandle TargetDataHandle(TargetData);
+
 			// Apply to target
-			FGameplayEffectSpecHandle DamageSpecHandle =
-				GetAbilitySystemComponentFromActorInfo()->MakeOutgoingSpec(
-					DamageEffectToUse, GetAbilityLevel(Handle, ActorInfo),
-					FGameplayEffectContextHandle());
-			if(DamageSpecHandle.IsValid())
-			{
-				// Create target data
-				FGameplayAbilityTargetData_SingleTargetHit *TargetData =
-					new FGameplayAbilityTargetData_SingleTargetHit();
-				TargetData->HitResult = FHitResult(
-					Target, nullptr, FVector::ZeroVector, FVector::ZeroVector);
-				FGameplayAbilityTargetDataHandle TargetDataHandle(TargetData);
-
-				// Apply to target
-				ApplyGameplayEffectSpecToTarget(Handle, ActorInfo,
-					ActivationInfo, DamageSpecHandle, TargetDataHandle);
-			}
+			ApplyGameplayEffectSpecToTarget(Handle, ActorInfo, ActivationInfo,
+				DamageSpecHandle, TargetDataHandle);
 		}
-		else
-		{
-			// Apply to owner if no target (for now)
-			ApplyGameplayEffectToOwner(Handle, ActorInfo, ActivationInfo,
-				DamageEffectToUse.GetDefaultObject(),
-				GetAbilityLevel(Handle, ActorInfo));
-		}
+	}
+	else
+	{
+		// Apply to owner if no target (for now)
+		ApplyGameplayEffectToOwner(Handle, ActorInfo, ActivationInfo,
+			DamageEffectToUse.GetDefaultObject(),
+			GetAbilityLevel(Handle, ActorInfo));
 	}
 }
 
