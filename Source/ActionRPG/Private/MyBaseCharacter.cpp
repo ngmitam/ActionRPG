@@ -45,7 +45,6 @@ void AMyBaseCharacter::Tick(float DeltaTime)
 void AMyBaseCharacter::HandleDeath()
 {
 	// Base implementation - disable movement and set death status
-	SetActorTickEnabled(false);
 	GetCharacterMovement()->DisableMovement();
 
 	bIsDead = true;
@@ -69,6 +68,25 @@ void AMyBaseCharacter::HandleDeath()
 	{
 		AttributeComponent->HandleDeath();
 	}
+}
+
+float AMyBaseCharacter::TakeDamage(float DamageAmount,
+	struct FDamageEvent const &DamageEvent, class AController *EventInstigator,
+	AActor *DamageCauser)
+{
+	float ActualDamage = Super::TakeDamage(
+		DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	// Apply damage through GAS attributes
+	if(AttributeComponent && AttributeComponent->IsAbilitySystemValid())
+	{
+		// Apply damage to health attribute
+		AttributeComponent->GetAbilitySystemComponent()->ApplyModToAttribute(
+			AttributeComponent->GetAttributeSet()->GetHealthAttribute(),
+			EGameplayModOp::Additive, -ActualDamage);
+	}
+
+	return ActualDamage;
 }
 
 void AMyBaseCharacter::OnHealthChanged(float NewHealth)

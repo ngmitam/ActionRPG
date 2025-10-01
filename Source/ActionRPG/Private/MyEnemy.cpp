@@ -64,6 +64,7 @@ void AMyEnemy::InitializeHealthBar()
 	if(HealthBarWidget && HealthBarWidgetClass)
 	{
 		HealthBarWidget->SetWidgetClass(HealthBarWidgetClass);
+		HealthBarWidget->InitWidget();
 	}
 }
 
@@ -172,8 +173,6 @@ void AMyEnemy::HandleDeath()
 
 void AMyEnemy::OnEnemyHealthChanged(float NewHealth)
 {
-
-	PreviousHealth = NewHealth;
 	UpdateHealthBar();
 }
 
@@ -220,27 +219,45 @@ void AMyEnemy::SetHealthBarVisible(bool bVisible)
 	}
 }
 
+void AMyEnemy::SetFocused(bool bFocused)
+{
+	bIsFocused = bFocused;
+	if(HealthBarWidget)
+	{
+		UpdateHealthBar();
+	}
+}
+
 void AMyEnemy::InitializeDefaultAttributes()
 {
 	// Enemy uses simple health, no GAS needed
 }
 void AMyEnemy::UpdateHealthBar()
 {
-	if(HealthBarWidget)
+	if(!HealthBarWidget)
+		return;
+	UUserWidget *Widget = HealthBarWidget->GetUserWidgetObject();
+	if(!Widget)
+		return;
+	// Assuming the widget has a ProgressBar named "HealthBar"
+	UProgressBar *HealthProgressBar =
+		Cast<UProgressBar>(Widget->GetWidgetFromName(TEXT("HealthBar")));
+	if(!HealthProgressBar)
 	{
-		UUserWidget *Widget = HealthBarWidget->GetUserWidgetObject();
-		if(Widget)
-		{
-			// Assuming the widget has a ProgressBar named "HealthBar"
-			UProgressBar *HealthProgressBar = Cast<UProgressBar>(
-				Widget->GetWidgetFromName(TEXT("HealthBar")));
-			if(HealthProgressBar)
-			{
-				float HealthPercent =
-					(MaxHealth > 0.0f) ? (Health / MaxHealth) : 0.0f;
+		return;
+	}
 
-				HealthProgressBar->SetPercent(HealthPercent);
-			}
-		}
+	float HealthPercent = (MaxHealth > 0.0f) ? (Health / MaxHealth) : 0.0f;
+
+	HealthProgressBar->SetPercent(HealthPercent);
+
+	// Set color based on focused state
+	if(bIsFocused)
+	{
+		HealthProgressBar->SetFillColorAndOpacity(FLinearColor::Yellow);
+	}
+	else
+	{
+		HealthProgressBar->SetFillColorAndOpacity(FLinearColor::Red);
 	}
 }

@@ -63,6 +63,7 @@ constexpr float DefaultStamina = 100.0f;
 constexpr float DefaultMaxStamina = 100.0f;
 constexpr float DefaultBaseDamage = 10.0f;
 constexpr float DefaultMaxWalkSpeed = 300.0f;
+constexpr float EnemyDetectionRange = 5000.0f;
 } // namespace DefaultValues
 
 // Default attribute configuration struct

@@ -4,6 +4,7 @@
 
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "MyEnemy.h"
 
 AMyEnemyAIController::AMyEnemyAIController()
 {
@@ -27,6 +28,15 @@ void AMyEnemyAIController::OnPossess(APawn *InPawn)
 	{
 		BlackboardComponent->InitializeBlackboard(
 			*BehaviorTree->BlackboardAsset);
+
+		// Set attack range in blackboard for dynamic behavior
+		AMyEnemy *Enemy = Cast<AMyEnemy>(InPawn);
+		if(Enemy)
+		{
+			BlackboardComponent->SetValueAsFloat(
+				FName("AttackRange"), Enemy->AttackRange);
+		}
+
 		BehaviorTreeComponent->StartTree(*BehaviorTree);
 	}
 }

@@ -3,7 +3,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
 #include "CollisionShape.h"
-#include "Engine/OverlapResult.h"
+#include "Kismet/GameplayStatics.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -51,7 +51,6 @@ AMyCharacter::AMyCharacter()
 
 	// Attribute Component will be created in BeginPlay
 }
-
 void AMyCharacter::PossessedBy(AController *NewController)
 {
 	Super::PossessedBy(NewController);
@@ -70,6 +69,7 @@ void AMyCharacter::BeginPlay()
 	SetupInputMapping();
 
 	// Start updating nearby enemies
+	UpdateNearbyEnemies(); // Initial update
 	GetWorld()->GetTimerManager().SetTimer(UpdateEnemiesTimerHandle, this,
 		&AMyCharacter::UpdateNearbyEnemies, 1.0f, true);
 
@@ -328,35 +328,6 @@ void AMyCharacter::Attack()
 		return;
 	}
 
-	// Log all granted abilities
-	TArray<FGameplayAbilitySpecHandle> GrantedHandles;
-	ASC->GetAllAbilities(GrantedHandles);
-
-	for(const FGameplayAbilitySpecHandle &Handle : GrantedHandles)
-	{
-		FGameplayAbilitySpec *Spec = ASC->FindAbilitySpecFromHandle(Handle);
-	}
-
-	// Check if attack ability is granted
-	TArray<FGameplayAbilitySpec> Abilities = ASC->GetActivatableAbilities();
-
-	bool bHasAttackAbility = false;
-	for(const FGameplayAbilitySpec &Spec : Abilities)
-	{
-		if(Spec.Ability
-			&& Spec.Ability->GetClass()->IsChildOf(
-				UMyAttackAbility::StaticClass()))
-		{
-			bHasAttackAbility = true;
-			break;
-		}
-	}
-
-	if(!bHasAttackAbility)
-	{
-		return;
-	}
-
 	UMyAttackAbility *ActiveAbility = GetActiveAttackAbility();
 	if(ActiveAbility)
 	{
@@ -364,8 +335,19 @@ void AMyCharacter::Attack()
 		return;
 	}
 
-	ASC->AbilityLocalInputPressed(
-		static_cast<int32>(EMyAbilityInputID::Attack));
+	// Check if attack ability is available
+	TArray<FGameplayAbilitySpec> Abilities = ASC->GetActivatableAbilities();
+	for(const FGameplayAbilitySpec &Spec : Abilities)
+	{
+		if(Spec.Ability
+			&& Spec.Ability->GetClass()->IsChildOf(
+				UMyAttackAbility::StaticClass()))
+		{
+			ASC->AbilityLocalInputPressed(
+				static_cast<int32>(EMyAbilityInputID::Attack));
+			break;
+		}
+	}
 }
 
 void AMyCharacter::SetupPlayerInputDeferred()
@@ -475,21 +457,35 @@ void AMyCharacter::UpdateNearbyEnemies()
 {
 	PreviousNearbyEnemies = NearbyEnemies;
 	NearbyEnemies.Empty();
-	TArray<FOverlapResult> OverlapResults;
-	FCollisionShape Sphere =
-		FCollisionShape::MakeSphere(1000.0f); // 10 meter radius
-	GetWorld()->OverlapMultiByObjectType(OverlapResults, GetActorLocation(),
-		FQuat::Identity, FCollisionObjectQueryParams(ECC_Pawn), Sphere);
 
-	for(const FOverlapResult &Result : OverlapResults)
+	FindNearbyEnemies();
+	SortEnemiesByDistance();
+	UpdateHealthBarVisibility();
+	ValidateCurrentTarget();
+}
+
+void AMyCharacter::FindNearbyEnemies()
+{
+	TArray<AActor *> AllEnemies;
+	UGameplayStatics::GetAllActorsOfClass(
+		GetWorld(), AMyEnemy::StaticClass(), AllEnemies);
+
+	for(AActor *Actor : AllEnemies)
 	{
-		if(AMyEnemy *Enemy = Cast<AMyEnemy>(Result.GetActor()))
+		if(AMyEnemy *Enemy = Cast<AMyEnemy>(Actor))
 		{
-			NearbyEnemies.Add(Enemy);
+			float Distance =
+				FVector::Dist(GetActorLocation(), Enemy->GetActorLocation());
+			if(Distance <= DefaultValues::EnemyDetectionRange)
+			{
+				NearbyEnemies.Add(Enemy);
+			}
 		}
 	}
+}
 
-	// Sort by distance
+void AMyCharacter::SortEnemiesByDistance()
+{
 	NearbyEnemies.Sort(
 		[this](const AMyEnemy &A, const AMyEnemy &B)
 		{
@@ -499,8 +495,11 @@ void AMyCharacter::UpdateNearbyEnemies()
 				FVector::DistSquared(GetActorLocation(), B.GetActorLocation());
 			return DistA < DistB;
 		});
+}
 
-	// Update health bar visibility
+void AMyCharacter::UpdateHealthBarVisibility()
+{
+	// Hide health bars for enemies that are no longer nearby
 	for(AMyEnemy *Enemy : PreviousNearbyEnemies)
 	{
 		if(!NearbyEnemies.Contains(Enemy) && Enemy != CurrentTarget)
@@ -509,6 +508,7 @@ void AMyCharacter::UpdateNearbyEnemies()
 		}
 	}
 
+	// Show health bars for nearby enemies
 	for(AMyEnemy *Enemy : NearbyEnemies)
 	{
 		if(Enemy != CurrentTarget)
@@ -518,22 +518,22 @@ void AMyCharacter::UpdateNearbyEnemies()
 	}
 }
 
+void AMyCharacter::ValidateCurrentTarget()
+{
+	if(CurrentTarget
+		&& (!NearbyEnemies.Contains(CurrentTarget) || CurrentTarget->bIsDead))
+	{
+		CycleTarget();
+	}
+}
 void AMyCharacter::FocusEnemy()
 {
-	if(NearbyEnemies.Num() == 0)
-	{
-		CurrentTarget = nullptr;
-		bCameraLocked = false;
-		return;
-	}
-
 	CycleTarget();
 }
 
 void AMyCharacter::CycleTarget()
 {
 	AMyEnemy *OldTarget = CurrentTarget;
-
 	if(NearbyEnemies.Num() == 0)
 	{
 		CurrentTarget = nullptr;
@@ -543,34 +543,51 @@ void AMyCharacter::CycleTarget()
 			if(!NearbyEnemies.Contains(OldTarget))
 			{
 				OldTarget->SetHealthBarVisible(false);
+				OldTarget->SetFocused(false);
 			}
 		}
 		return;
 	}
 
-	int32 CurrentIndex = NearbyEnemies.Find(CurrentTarget);
+	// Create list of all possible targets including no target
+	TArray<AMyEnemy *> AllTargets;
+	AllTargets.Add(nullptr); // No target option
+	for(AMyEnemy *Enemy : NearbyEnemies)
+	{
+		AllTargets.Add(Enemy);
+	}
+
+	int32 CurrentIndex = AllTargets.Find(CurrentTarget);
 	if(CurrentIndex == INDEX_NONE)
 	{
-		CurrentTarget = NearbyEnemies[0];
+		CurrentTarget = AllTargets[0];
 	}
 	else
 	{
-		int32 NextIndex = (CurrentIndex + 1) % NearbyEnemies.Num();
-		CurrentTarget = NearbyEnemies[NextIndex];
+		int32 NextIndex = (CurrentIndex + 1) % AllTargets.Num();
+		CurrentTarget = AllTargets[NextIndex];
 	}
 
-	// Update visibility
+	// Update camera lock
+	bCameraLocked = (CurrentTarget != nullptr);
+
+	// Update visibility and focus
 	if(OldTarget && OldTarget != CurrentTarget)
 	{
 		if(!NearbyEnemies.Contains(OldTarget))
 		{
 			OldTarget->SetHealthBarVisible(false);
+			OldTarget->SetFocused(false);
+		}
+		else
+		{
+			OldTarget->SetFocused(false);
 		}
 	}
 
 	if(CurrentTarget)
 	{
 		CurrentTarget->SetHealthBarVisible(true);
-		bCameraLocked = true;
+		CurrentTarget->SetFocused(true);
 	}
 }

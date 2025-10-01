@@ -54,10 +54,19 @@ EBTNodeResult::Type UBTTask_AttackPlayer::ExecuteTask(
 	// Check distance
 	float Distance = FVector::Dist(
 		Enemy->GetActorLocation(), PlayerCharacter->GetActorLocation());
-	if(Distance <= AttackRange)
+	if(Distance <= AttackRange + 50.0f)
 	{
-		Enemy->AttackPlayer(PlayerCharacter);
-		return EBTNodeResult::Succeeded;
+		// Check if not already attacking
+		if(!Enemy->bIsAttacking)
+		{
+			Enemy->AttackPlayer(PlayerCharacter);
+			return EBTNodeResult::Succeeded;
+		}
+		else
+		{
+			// Already attacking, fail to prevent repeated calls
+			return EBTNodeResult::Failed;
+		}
 	}
 
 	return EBTNodeResult::Failed;

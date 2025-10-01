@@ -28,7 +28,7 @@ public:
 	void MoveTowardsPlayer(float DeltaTime);
 
 	// Attack player if close
-	void AttackPlayer(ACharacter *Player);
+	virtual void AttackPlayer(ACharacter *Player);
 
 	// Reset attack state (called from animation notify)
 	UFUNCTION(BlueprintCallable, Category = "Animation")
@@ -42,9 +42,6 @@ public:
 
 	// Handle enemy-specific health changes
 	void OnEnemyHealthChanged(float NewHealth);
-
-	// Handle stun duration changes
-	void OnStunDurationChanged(float NewStunDuration);
 
 	// Simple health accessors (not using GAS)
 	UFUNCTION(BlueprintPure, Category = "Attributes")
@@ -61,6 +58,9 @@ public:
 
 	// Set health bar visibility
 	void SetHealthBarVisible(bool bVisible);
+
+	// Set focused state
+	void SetFocused(bool bFocused);
 
 	// Initialize default attributes
 	void InitializeDefaultAttributes() override;
@@ -105,6 +105,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Animation")
 	bool bIsStunned = false;
 
+	// Focused state for health bar color
+	UPROPERTY(BlueprintReadOnly, Category = "UI")
+	bool bIsFocused = false;
+
 	// Stun duration when taking damage
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	float StunDuration = 2.0f;
@@ -113,15 +117,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	float DeathDelay = 5.0f;
 
-private:
 	// Montage end callback
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage *Montage, bool bInterrupted);
 
 	float LastAttackTime = 0.0f;
 
-	ACharacter *PlayerCharacter;
-
-	// Previous health value to detect changes
-	float PreviousHealth = -1.0f;
+	ACharacter *PlayerCharacter = nullptr;
 };

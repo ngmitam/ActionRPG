@@ -13,7 +13,7 @@ UMyDamageEffect::UMyDamageEffect()
 	FGameplayModifierInfo ModifierInfo;
 	ModifierInfo.Attribute = UMyAttributeSet::GetHealthAttribute();
 	ModifierInfo.ModifierOp = EGameplayModOp::Additive;
-	// Use SetByCaller magnitude for dynamic damage
+	// Use SetByCaller magnitude for dynamic damage (negative to subtract)
 	FSetByCallerFloat SetByCallerFloat;
 	SetByCallerFloat.DataTag =
 		FGameplayTag::RequestGameplayTag(FName("Data.Damage"));

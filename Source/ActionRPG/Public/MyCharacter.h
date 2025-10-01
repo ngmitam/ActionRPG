@@ -165,5 +165,9 @@ private:
 	FTimerHandle UpdateEnemiesTimerHandle;
 
 	void UpdateNearbyEnemies();
+	void FindNearbyEnemies();
+	void SortEnemiesByDistance();
+	void UpdateHealthBarVisibility();
+	void ValidateCurrentTarget();
 	void CycleTarget();
 };
