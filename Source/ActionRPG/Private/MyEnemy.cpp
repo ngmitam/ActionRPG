@@ -12,10 +12,14 @@
 #include "MyAttributeComponent.h"
 #include "MyCharacter.h"
 #include "MyDamageEffect.h"
+#include "MyEnemyAIController.h"
 
 AMyEnemy::AMyEnemy()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	// Set AI Controller class
+	AIControllerClass = AMyEnemyAIController::StaticClass();
 
 	// Simple movement
 	GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -40,16 +44,8 @@ void AMyEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Spawn AI Controller if specified
-	if(AIControllerClass)
-	{
-		AAIController *NewController = GetWorld()->SpawnActor<AAIController>(
-			AIControllerClass, GetActorLocation(), GetActorRotation());
-		if(NewController)
-		{
-			NewController->Possess(this);
-		}
-	}
+	// AI Controller is now automatically spawned by the engine
+	// No need to manually spawn it
 
 	// Initialize the health bar widget
 	InitializeHealthBar();

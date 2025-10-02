@@ -51,6 +51,15 @@ public:
 				   : nullptr;
 	}
 
+	// Try to get the ability system component, returns nullptr if not available
+	UAbilitySystemComponent *TryGetAbilitySystem() const
+	{
+		return IsAttributeSystemValid() ? GetAbilitySystemComponent() : nullptr;
+	}
+
+	// Check if ability system is ready for use
+	bool IsAbilitySystemReady() const { return IsAttributeSystemValid(); }
+
 	// Handle damage taken
 	virtual float TakeDamage(float DamageAmount,
 		struct FDamageEvent const &DamageEvent,

@@ -21,10 +21,25 @@ EBTNodeResult::Type UBTTask_FindPlayer::ExecuteTask(
 		return EBTNodeResult::Failed;
 	}
 
+	AMyEnemyAIController *EnemyController =
+		Cast<AMyEnemyAIController>(AIController);
+	if(!EnemyController)
+	{
+		return EBTNodeResult::Failed;
+	}
+
 	// Find player character
 	ACharacter *PlayerCharacter =
 		UGameplayStatics::GetPlayerCharacter(AIController->GetWorld(), 0);
 	if(!PlayerCharacter)
+	{
+		return EBTNodeResult::Failed;
+	}
+
+	// Check distance for detection
+	float Distance = FVector::Dist(AIController->GetPawn()->GetActorLocation(),
+		PlayerCharacter->GetActorLocation());
+	if(Distance > EnemyController->DetectionRange)
 	{
 		return EBTNodeResult::Failed;
 	}
@@ -35,6 +50,10 @@ EBTNodeResult::Type UBTTask_FindPlayer::ExecuteTask(
 	{
 		BlackboardComp->SetValueAsObject(
 			PlayerKey.SelectedKeyName, PlayerCharacter);
+
+		// Alert nearby enemies
+		EnemyController->AlertNearbyEnemies();
+
 		return EBTNodeResult::Succeeded;
 	}
 

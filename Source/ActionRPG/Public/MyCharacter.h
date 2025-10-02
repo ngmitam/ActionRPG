@@ -21,13 +21,29 @@ class UInputAction;
 class UMyAttributeComponent;
 
 UCLASS()
+/**
+ * @class AMyCharacter
+ * @brief Player character class with GAS integration, combo attacks, and enemy
+ * targeting
+ *
+ * This class extends AMyBaseCharacter to provide player-specific functionality
+ * including:
+ * - Input handling for movement, combat, and abilities
+ * - Enemy targeting and camera locking system
+ * - Player UI management
+ * - Sprint, jump, dodge, and attack abilities
+ */
 class ACTIONRPG_API AMyCharacter : public AMyBaseCharacter
 {
 	GENERATED_BODY()
 public:
 	AMyCharacter();
 
-	// Get the ability system component from the AttributeComponent
+	/**
+	 * @brief Get the ability system component from the AttributeComponent
+	 * @return Pointer to the ability system component, or nullptr if not
+	 * available
+	 */
 	UAbilitySystemComponent *GetAbilitySystem() const
 	{
 		return AttributeComponent
@@ -35,11 +51,22 @@ public:
 				   : nullptr;
 	}
 
+	/**
+	 * @brief Called every frame
+	 * @param DeltaTime Time elapsed since last frame
+	 */
 	virtual void Tick(float DeltaTime) override;
+	/**
+	 * @brief Sets up player input component
+	 * @param PlayerInputComponent The input component to setup
+	 */
 	virtual void SetupPlayerInputComponent(
 		class UInputComponent *PlayerInputComponent) override;
 
-	// Public getter for sprint status, used by Animation Blueprint
+	/**
+	 * @brief Get sprint status for Animation Blueprint
+	 * @return True if character is sprinting
+	 */
 	UFUNCTION(BlueprintPure, Category = "Character State")
 	bool IsSprinting() const
 	{
@@ -61,13 +88,22 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Character State")
 	int32 GetCurrentComboIndex() const;
 
-	// Targeting functions
+	/**
+	 * @brief Check if enemy is in focus range
+	 * @param Enemy The enemy to check
+	 * @return True if enemy is in nearby enemies list
+	 */
 	UFUNCTION(BlueprintPure, Category = "Targeting")
 	bool IsEnemyInFocusRange(AMyEnemy *Enemy) const
 	{
 		return NearbyEnemies.Contains(Enemy);
 	}
 
+	/**
+	 * @brief Check if enemy is currently focused/targeted
+	 * @param Enemy The enemy to check
+	 * @return True if enemy is the current target
+	 */
 	UFUNCTION(BlueprintPure, Category = "Targeting")
 	bool IsEnemyFocused(AMyEnemy *Enemy) const
 	{
@@ -170,4 +206,14 @@ private:
 	void UpdateHealthBarVisibility();
 	void ValidateCurrentTarget();
 	void CycleTarget();
+
+	// Helper methods for target cycling
+	void HandleNoNearbyEnemies(AMyEnemy *OldTarget);
+	TArray<AMyEnemy *> CreateTargetList() const;
+	int32 FindCurrentTargetIndex(const TArray<AMyEnemy *> &AllTargets) const;
+	AMyEnemy *GetNextTarget(
+		const TArray<AMyEnemy *> &AllTargets, int32 CurrentIndex) const;
+	void UpdateCameraLock(AMyEnemy *NewTarget);
+	void UpdateTargetVisibilityAndFocus(
+		AMyEnemy *OldTarget, AMyEnemy *NewTarget);
 };

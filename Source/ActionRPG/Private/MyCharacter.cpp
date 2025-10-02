@@ -2,7 +2,6 @@
 
 #include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
-#include "CollisionShape.h"
 #include "Kismet/GameplayStatics.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -71,7 +70,8 @@ void AMyCharacter::BeginPlay()
 	// Start updating nearby enemies
 	UpdateNearbyEnemies(); // Initial update
 	GetWorld()->GetTimerManager().SetTimer(UpdateEnemiesTimerHandle, this,
-		&AMyCharacter::UpdateNearbyEnemies, 1.0f, true);
+		&AMyCharacter::UpdateNearbyEnemies, DefaultValues::EnemyUpdateInterval,
+		true);
 
 	// Ensure AttributeComponent is ready before proceeding
 	if(!IsAttributeSystemValid())
@@ -212,12 +212,11 @@ void AMyCharacter::StartSprint()
 	if(IsAttacking())
 		return;
 
-	if(!IsAttributeSystemValid())
+	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
+	if(!ASC)
 	{
 		return;
 	}
-
-	UAbilitySystemComponent *ASC = GetAbilitySystem();
 
 	AttributeComponent->SetSprinting(true);
 	ASC->AbilityLocalInputPressed(
@@ -229,12 +228,11 @@ void AMyCharacter::StopSprint()
 	if(IsAttacking())
 		return;
 
-	if(!IsAttributeSystemValid())
+	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
+	if(!ASC)
 	{
 		return;
 	}
-
-	UAbilitySystemComponent *ASC = GetAbilitySystem();
 
 	FGameplayTagContainer SprintAbilityTagContainer;
 	SprintAbilityTagContainer.AddTag(
@@ -250,12 +248,11 @@ void AMyCharacter::Jump()
 
 	Super::Jump();
 
-	if(!IsAttributeSystemValid())
+	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
+	if(!ASC)
 	{
 		return;
 	}
-
-	UAbilitySystemComponent *ASC = GetAbilitySystem();
 
 	ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Jump));
 }
@@ -265,12 +262,11 @@ void AMyCharacter::StopJumping()
 	if(IsAttacking())
 		return;
 
-	if(!IsAttributeSystemValid())
+	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
+	if(!ASC)
 	{
 		return;
 	}
-
-	UAbilitySystemComponent *ASC = GetAbilitySystem();
 
 	FGameplayTagContainer JumpAbilityTagContainer;
 	JumpAbilityTagContainer.AddTag(
@@ -284,12 +280,12 @@ void AMyCharacter::Dodge()
 		return;
 
 	// Trigger ability system
-	if(!IsAttributeSystemValid() || AttributeComponent->IsDodging())
+	if(!IsAbilitySystemReady() || AttributeComponent->IsDodging())
 	{
 		return;
 	}
 
-	UAbilitySystemComponent *ASC = GetAbilitySystem();
+	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
 
 	AttributeComponent->SetDodging(true);
 	ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Dodge));
@@ -303,7 +299,7 @@ void AMyCharacter::Dodge()
 			if(AttributeComponent)
 			{
 				AttributeComponent->SetDodging(false);
-				if(UAbilitySystemComponent *ASCInner = GetAbilitySystem())
+				if(UAbilitySystemComponent *ASCInner = TryGetAbilitySystem())
 				{
 					FGameplayTagContainer DodgeAbilityTagContainer;
 					DodgeAbilityTagContainer.AddTag(
@@ -317,12 +313,7 @@ void AMyCharacter::Dodge()
 
 void AMyCharacter::Attack()
 {
-	if(!IsAttributeSystemValid())
-	{
-		return;
-	}
-
-	UAbilitySystemComponent *ASC = GetAbilitySystem();
+	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
 	if(!ASC)
 	{
 		return;
@@ -429,12 +420,12 @@ int32 AMyCharacter::GetCurrentComboIndex() const
 
 UMyAttackAbility *AMyCharacter::GetActiveAttackAbility() const
 {
-	if(!IsAttributeSystemValid())
+	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
+	if(!ASC)
 	{
 		return nullptr;
 	}
 
-	UAbilitySystemComponent *ASC = GetAbilitySystem();
 	TArray<FGameplayAbilitySpec> Abilities = ASC->GetActivatableAbilities();
 
 	for(const FGameplayAbilitySpec &Spec : Abilities)
@@ -536,43 +527,75 @@ void AMyCharacter::CycleTarget()
 	AMyEnemy *OldTarget = CurrentTarget;
 	if(NearbyEnemies.Num() == 0)
 	{
-		CurrentTarget = nullptr;
-		bCameraLocked = false;
-		if(OldTarget)
-		{
-			if(!NearbyEnemies.Contains(OldTarget))
-			{
-				OldTarget->SetHealthBarVisible(false);
-				OldTarget->SetFocused(false);
-			}
-		}
+		HandleNoNearbyEnemies(OldTarget);
 		return;
 	}
 
 	// Create list of all possible targets including no target
+	TArray<AMyEnemy *> AllTargets = CreateTargetList();
+
+	int32 CurrentIndex = FindCurrentTargetIndex(AllTargets);
+	AMyEnemy *NewTarget = GetNextTarget(AllTargets, CurrentIndex);
+
+	CurrentTarget = NewTarget;
+
+	UpdateCameraLock(NewTarget);
+	UpdateTargetVisibilityAndFocus(OldTarget, NewTarget);
+}
+
+void AMyCharacter::HandleNoNearbyEnemies(AMyEnemy *OldTarget)
+{
+	CurrentTarget = nullptr;
+	bCameraLocked = false;
+	if(OldTarget)
+	{
+		if(!NearbyEnemies.Contains(OldTarget))
+		{
+			OldTarget->SetHealthBarVisible(false);
+			OldTarget->SetFocused(false);
+		}
+	}
+}
+
+TArray<AMyEnemy *> AMyCharacter::CreateTargetList() const
+{
 	TArray<AMyEnemy *> AllTargets;
 	AllTargets.Add(nullptr); // No target option
 	for(AMyEnemy *Enemy : NearbyEnemies)
 	{
 		AllTargets.Add(Enemy);
 	}
+	return AllTargets;
+}
 
+int32 AMyCharacter::FindCurrentTargetIndex(
+	const TArray<AMyEnemy *> &AllTargets) const
+{
 	int32 CurrentIndex = AllTargets.Find(CurrentTarget);
 	if(CurrentIndex == INDEX_NONE)
 	{
-		CurrentTarget = AllTargets[0];
+		return 0; // Default to first target (no target)
 	}
-	else
-	{
-		int32 NextIndex = (CurrentIndex + 1) % AllTargets.Num();
-		CurrentTarget = AllTargets[NextIndex];
-	}
+	return CurrentIndex;
+}
 
-	// Update camera lock
-	bCameraLocked = (CurrentTarget != nullptr);
+AMyEnemy *AMyCharacter::GetNextTarget(
+	const TArray<AMyEnemy *> &AllTargets, int32 CurrentIndex) const
+{
+	int32 NextIndex = (CurrentIndex + 1) % AllTargets.Num();
+	return AllTargets[NextIndex];
+}
 
-	// Update visibility and focus
-	if(OldTarget && OldTarget != CurrentTarget)
+void AMyCharacter::UpdateCameraLock(AMyEnemy *NewTarget)
+{
+	bCameraLocked = (NewTarget != nullptr);
+}
+
+void AMyCharacter::UpdateTargetVisibilityAndFocus(
+	AMyEnemy *OldTarget, AMyEnemy *NewTarget)
+{
+	// Update old target
+	if(OldTarget && OldTarget != NewTarget)
 	{
 		if(!NearbyEnemies.Contains(OldTarget))
 		{
@@ -585,9 +608,10 @@ void AMyCharacter::CycleTarget()
 		}
 	}
 
-	if(CurrentTarget)
+	// Update new target
+	if(NewTarget)
 	{
-		CurrentTarget->SetHealthBarVisible(true);
-		CurrentTarget->SetFocused(true);
+		NewTarget->SetHealthBarVisible(true);
+		NewTarget->SetFocused(true);
 	}
 }

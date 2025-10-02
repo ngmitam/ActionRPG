@@ -4,6 +4,7 @@
 
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "MyAbilityTypes.h"
 #include "MyAttributeComponent.h"
 #include "MyCharacter.h"
 
@@ -68,17 +69,17 @@ void UMyPlayerUI::UpdateHealthUI()
 		HealthBar->SetPercent(HealthPercent);
 
 		// Change color based on health level
-		if(HealthPercent > 0.6f)
+		if(HealthPercent > UIConstants::HealthHighThreshold)
 		{
-			HealthBar->SetFillColorAndOpacity(FLinearColor::Green);
+			HealthBar->SetFillColorAndOpacity(UIConstants::HealthColorHigh);
 		}
-		else if(HealthPercent > 0.3f)
+		else if(HealthPercent > UIConstants::HealthMediumThreshold)
 		{
-			HealthBar->SetFillColorAndOpacity(FLinearColor::Yellow);
+			HealthBar->SetFillColorAndOpacity(UIConstants::HealthColorMedium);
 		}
 		else
 		{
-			HealthBar->SetFillColorAndOpacity(FLinearColor::Red);
+			HealthBar->SetFillColorAndOpacity(UIConstants::HealthColorLow);
 		}
 	}
 }
@@ -107,20 +108,19 @@ void UMyPlayerUI::UpdateStaminaUI()
 		StaminaBar->SetPercent(StaminaPercent);
 
 		// Change color based on stamina level
-		if(StaminaPercent > 0.5f)
+		if(StaminaPercent > UIConstants::StaminaHighThreshold)
 		{
-			StaminaBar->SetFillColorAndOpacity(FLinearColor::Blue);
+			StaminaBar->SetFillColorAndOpacity(UIConstants::StaminaColorHigh);
 		}
-		else if(StaminaPercent > 0.2f)
+		else if(StaminaPercent > UIConstants::StaminaMediumThreshold)
 		{
 			// Use a custom orange color since FLinearColor::Orange doesn't
 			// exist
-			StaminaBar->SetFillColorAndOpacity(
-				FLinearColor(1.0f, 0.5f, 0.0f, 1.0f));
+			StaminaBar->SetFillColorAndOpacity(UIConstants::StaminaColorMedium);
 		}
 		else
 		{
-			StaminaBar->SetFillColorAndOpacity(FLinearColor::Red);
+			StaminaBar->SetFillColorAndOpacity(UIConstants::StaminaColorLow);
 		}
 	}
 }

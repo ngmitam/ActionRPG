@@ -64,7 +64,26 @@ constexpr float DefaultMaxStamina = 100.0f;
 constexpr float DefaultBaseDamage = 10.0f;
 constexpr float DefaultMaxWalkSpeed = 300.0f;
 constexpr float EnemyDetectionRange = 5000.0f;
+constexpr float EnemyUpdateInterval = 1.0f;
 } // namespace DefaultValues
+
+// UI Constants
+namespace UIConstants
+{
+constexpr float HealthHighThreshold = 0.6f;
+constexpr float HealthMediumThreshold = 0.3f;
+constexpr float StaminaHighThreshold = 0.5f;
+constexpr float StaminaMediumThreshold = 0.2f;
+
+// UI Colors
+const FLinearColor HealthColorHigh = FLinearColor::Green;
+const FLinearColor HealthColorMedium = FLinearColor::Yellow;
+const FLinearColor HealthColorLow = FLinearColor::Red;
+const FLinearColor StaminaColorHigh = FLinearColor::Blue;
+const FLinearColor StaminaColorMedium =
+	FLinearColor(1.0f, 0.5f, 0.0f, 1.0f); // Orange
+const FLinearColor StaminaColorLow = FLinearColor::Red;
+} // namespace UIConstants
 
 // Default attribute configuration struct
 USTRUCT(BlueprintType)

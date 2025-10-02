@@ -80,7 +80,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	float AttackCooldown = DefaultValues::EnemyAttackCooldown;
 
-	// Health bar widget component
+	// Patrol points for AI
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	TArray<AActor *> PatrolPoints;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
 	UWidgetComponent *HealthBarWidget;
 
