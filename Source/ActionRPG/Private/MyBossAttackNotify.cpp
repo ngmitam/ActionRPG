@@ -1,3 +1,5 @@
+// Copyright 2025 ngmitam. All Rights Reserved.
+
 #include "MyBossAttackNotify.h"
 #include "MyBoss.h"
 
