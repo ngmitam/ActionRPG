@@ -65,26 +65,12 @@ void AMyCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	InitializePlayerUI();
-	SetupInputMapping();
 
 	// Start updating nearby enemies
 	UpdateNearbyEnemies(); // Initial update
 	GetWorld()->GetTimerManager().SetTimer(UpdateEnemiesTimerHandle, this,
 		&AMyCharacter::UpdateNearbyEnemies, DefaultValues::EnemyUpdateInterval,
 		true);
-
-	// Ensure AttributeComponent is ready before proceeding
-	if(!IsAttributeSystemValid())
-	{
-		// Defer input setup if component not ready
-		GetWorld()->GetTimerManager().SetTimerForNextTick(
-			this, &AMyCharacter::SetupPlayerInputDeferred);
-	}
-	else
-	{
-		// Setup input immediately if component is ready
-		SetupPlayerInputComponent(this->InputComponent);
-	}
 }
 
 void AMyCharacter::InitializePlayerUI()
@@ -109,21 +95,6 @@ void AMyCharacter::InitializePlayerUI()
 	}
 }
 
-void AMyCharacter::SetupInputMapping()
-{
-	// Input Mapping Context
-	if(APlayerController *PlayerController =
-			Cast<APlayerController>(Controller))
-	{
-		if(UEnhancedInputLocalPlayerSubsystem *Subsystem =
-				ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
-					PlayerController->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
-		}
-	}
-}
-
 void AMyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -139,35 +110,6 @@ void AMyCharacter::Tick(float DeltaTime)
 		{
 			Controller->SetControlRotation(TargetRotation);
 		}
-	}
-}
-
-void AMyCharacter::SetupPlayerInputComponent(
-	UInputComponent *PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	if(UEnhancedInputComponent *EnhancedInputComponent =
-			CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
-	{
-		EnhancedInputComponent->BindAction(
-			MoveAction, ETriggerEvent::Triggered, this, &AMyCharacter::Move);
-		EnhancedInputComponent->BindAction(
-			LookAction, ETriggerEvent::Triggered, this, &AMyCharacter::Look);
-		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started,
-			this, &AMyCharacter::StartSprint);
-		EnhancedInputComponent->BindAction(SprintAction,
-			ETriggerEvent::Completed, this, &AMyCharacter::StopSprint);
-		EnhancedInputComponent->BindAction(
-			JumpAction, ETriggerEvent::Started, this, &AMyCharacter::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed,
-			this, &ACharacter::StopJumping);
-		EnhancedInputComponent->BindAction(
-			DodgeAction, ETriggerEvent::Started, this, &AMyCharacter::Dodge);
-		EnhancedInputComponent->BindAction(
-			AttackAction, ETriggerEvent::Started, this, &AMyCharacter::Attack);
-		EnhancedInputComponent->BindAction(FocusEnemyAction,
-			ETriggerEvent::Started, this, &AMyCharacter::FocusEnemy);
 	}
 }
 
@@ -338,22 +280,6 @@ void AMyCharacter::Attack()
 				static_cast<int32>(EMyAbilityInputID::Attack));
 			break;
 		}
-	}
-}
-
-void AMyCharacter::SetupPlayerInputDeferred()
-{
-	if(IsAttributeSystemValid())
-	{
-		if(UInputComponent *PlayerInputComp = this->InputComponent)
-		{
-			SetupPlayerInputComponent(PlayerInputComp);
-		}
-	}
-	else
-	{
-		GetWorld()->GetTimerManager().SetTimerForNextTick(
-			this, &AMyCharacter::SetupPlayerInputDeferred);
 	}
 }
 

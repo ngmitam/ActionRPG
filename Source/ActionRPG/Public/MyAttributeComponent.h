@@ -121,9 +121,9 @@ protected:
 		Category = "Abilities", meta = (AllowPrivateAccess = "true"))
 	UMyAttributeSet *AttributeSet;
 
-	// Default attribute effect assets
+	// Default attribute effect classes
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Abilities")
-	TArray<UGameplayEffect *> DefaultAttributeEffectAssets;
+	TArray<TSubclassOf<UGameplayEffect>> DefaultAttributeEffectClasses;
 
 	// Default ability classes
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Abilities")

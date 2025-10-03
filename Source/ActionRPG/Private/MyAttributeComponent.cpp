@@ -3,6 +3,7 @@
 #include "MyAttributeComponent.h"
 
 #include "AbilitySystemComponent.h"
+#include "Abilities/GameplayAbilityTargetTypes.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -212,12 +213,18 @@ void UMyAttributeComponent::InitializeAttributes()
 	SetDefaultAttributes(DefaultAttrs);
 
 	// Apply default attribute effects
-	for(UGameplayEffect *GE : DefaultAttributeEffectAssets)
+	for(TSubclassOf<UGameplayEffect> GEClass : DefaultAttributeEffectClasses)
 	{
-		if(GE)
+		if(GEClass)
 		{
-			AbilitySystemComponent->ApplyGameplayEffectToTarget(
-				GE, AbilitySystemComponent, 1.0f);
+			FGameplayEffectSpecHandle SpecHandle =
+				AbilitySystemComponent->MakeOutgoingSpec(
+					GEClass, 1.0f, FGameplayEffectContextHandle());
+			if(SpecHandle.IsValid())
+			{
+				AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(
+					*SpecHandle.Data.Get(), AbilitySystemComponent);
+			}
 		}
 	}
 }

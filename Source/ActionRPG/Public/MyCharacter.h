@@ -56,12 +56,6 @@ public:
 	 * @param DeltaTime Time elapsed since last frame
 	 */
 	virtual void Tick(float DeltaTime) override;
-	/**
-	 * @brief Sets up player input component
-	 * @param PlayerInputComponent The input component to setup
-	 */
-	virtual void SetupPlayerInputComponent(
-		class UInputComponent *PlayerInputComponent) override;
 
 	/**
 	 * @brief Get sprint status for Animation Blueprint
@@ -129,32 +123,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	UCameraComponent *CameraComponent;
 
-	// INPUT
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	UInputMappingContext *DefaultMappingContext;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	UInputAction *MoveAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	UInputAction *LookAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	UInputAction *SprintAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	UInputAction *JumpAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	UInputAction *DodgeAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	UInputAction *AttackAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	UInputAction *FocusEnemyAction;
-
-	// INPUT HANDLERS
+	// INPUT HANDLERS - Now called by PlayerController
+public:
 	void Move(const FInputActionValue &Value);
 	void Look(const FInputActionValue &Value);
 	void StartSprint();
@@ -183,12 +153,6 @@ private:
 
 	// Create and setup the player UI
 	void InitializePlayerUI();
-
-	// Setup input mapping context
-	void SetupInputMapping();
-
-	// Deferred input setup
-	void SetupPlayerInputDeferred();
 
 	// Helper to get the active attack ability
 	UMyAttackAbility *GetActiveAttackAbility() const;
