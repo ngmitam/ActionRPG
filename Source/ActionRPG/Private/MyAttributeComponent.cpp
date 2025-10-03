@@ -210,6 +210,16 @@ void UMyAttributeComponent::InitializeAttributes()
 	DefaultAttrs.MaxWalkSpeed = DefaultMaxWalkSpeed;
 
 	SetDefaultAttributes(DefaultAttrs);
+
+	// Apply default attribute effects
+	for(UGameplayEffect *GE : DefaultAttributeEffectAssets)
+	{
+		if(GE)
+		{
+			AbilitySystemComponent->ApplyGameplayEffectToTarget(
+				GE, AbilitySystemComponent, 1.0f);
+		}
+	}
 }
 
 void UMyAttributeComponent::GiveDefaultAbilities()
