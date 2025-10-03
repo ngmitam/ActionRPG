@@ -6,6 +6,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "GameplayEffect.h"
+#include "Kismet/GameplayStatics.h"
 #include "MyCharacter.h"
 #include "MyDamageEffect.h"
 #include "MyEnemy.h"
@@ -84,7 +85,8 @@ void UMyAnimNotify_AttackDamage::PerformTraceAndApplyDamage(AActor *OwnerActor)
 				if(AMyEnemy *Enemy = Cast<AMyEnemy>(HitActor))
 				{
 					// For Enemy, use simple damage
-					Enemy->ApplyDamage(DamageAmount);
+					UGameplayStatics::ApplyDamage(
+						Enemy, DamageAmount, nullptr, OwnerActor, nullptr);
 				}
 				else if(AMyCharacter *Player = Cast<AMyCharacter>(HitActor))
 				{

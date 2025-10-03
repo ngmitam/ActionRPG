@@ -172,8 +172,10 @@ void AMyEnemy::OnEnemyHealthChanged(float NewHealth)
 	UpdateHealthBar();
 }
 
-void AMyEnemy::ApplyDamage(float DamageAmount)
+float AMyEnemy::TakeDamage(float DamageAmount, const FDamageEvent &DamageEvent,
+	AController *EventInstigator, AActor *DamageCauser)
 {
+	// Apply damage to simple health
 	Health = FMath::Max(0.0f, Health - DamageAmount);
 	UpdateHealthBar();
 
@@ -192,6 +194,8 @@ void AMyEnemy::ApplyDamage(float DamageAmount)
 		GetWorld()->GetTimerManager().SetTimer(
 			StunTimer, [this]() { SetStunned(false); }, StunDuration, false);
 	}
+
+	return DamageAmount;
 }
 
 void AMyEnemy::SetStunned(bool bStunned)

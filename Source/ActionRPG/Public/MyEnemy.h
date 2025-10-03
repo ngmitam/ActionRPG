@@ -51,7 +51,9 @@ public:
 	float GetMaxHealth() const { return MaxHealth; }
 
 	// Apply damage
-	void ApplyDamage(float DamageAmount);
+	virtual float TakeDamage(float DamageAmount,
+		struct FDamageEvent const &DamageEvent,
+		class AController *EventInstigator, AActor *DamageCauser) override;
 
 	// Set stun state (for animation)
 	void SetStunned(bool bStunned);
