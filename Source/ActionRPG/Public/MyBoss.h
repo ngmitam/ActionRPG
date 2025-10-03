@@ -40,19 +40,14 @@ public:
 	// Handle combo interruption for stun
 	void OnComboInterrupted();
 
-	// Initialize default attributes with higher health
-	virtual void InitializeDefaultAttributes() override;
+	// Override TakeDamage to handle stun only during combo
+	virtual float TakeDamage(float DamageAmount,
+		struct FDamageEvent const &DamageEvent,
+		class AController *EventInstigator, AActor *DamageCauser) override;
 
 	// Spear component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	UStaticMeshComponent *SpearMesh;
-
-	// Boss specific properties
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boss")
-	float BossMaxHealth = 300.0f; // Higher health
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boss")
-	float BossAttackDamage = 15.0f;
 
 	// Attack montages
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
@@ -87,7 +82,7 @@ private:
 	EBossAttackType SelectRandomAttack();
 
 	// Play selected attack
-	void PlayAttack(EBossAttackType AttackType);
+	bool PlayAttack(EBossAttackType AttackType);
 
 	// Apply damage to player
 	void ApplyDamageToPlayer(ACharacter *Player);

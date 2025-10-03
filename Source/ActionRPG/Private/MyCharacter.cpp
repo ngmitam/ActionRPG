@@ -302,37 +302,30 @@ void AMyCharacter::HandleDeath()
 		PC->DisableInput(PC);
 	}
 
-	// Play death animation with custom logic
-	if(DeathMontage)
-	{
-		USkeletalMeshComponent *SkeletalMesh = GetMesh();
-		if(SkeletalMesh)
+	// Instead of destroying, reset the level
+	FTimerHandle ResetTimer;
+	GetWorld()->GetTimerManager().SetTimer(
+		ResetTimer,
+		[this]()
 		{
-			UAnimInstance *AnimInstance = SkeletalMesh->GetAnimInstance();
-			if(AnimInstance)
+			// Get current level name
+			FString CurrentLevelName = GetWorld()->GetMapName();
+			// Remove any path prefix if present
+			int32 LastSlashIndex;
+			if(CurrentLevelName.FindLastChar('/', LastSlashIndex))
 			{
-				float Duration = AnimInstance->Montage_Play(DeathMontage);
-				// Set timer to destroy after animation
-				FTimerHandle DeathTimer;
-				GetWorld()->GetTimerManager().SetTimer(
-					DeathTimer,
-					[this]()
-					{
-						if(AttributeComponent)
-						{
-							AttributeComponent->HandleDeath();
-						}
-					},
-					Duration, false);
+				CurrentLevelName = CurrentLevelName.Right(
+					CurrentLevelName.Len() - LastSlashIndex - 1);
 			}
-		}
-	}
-	else
-	{
-		// Fallback: ragdoll
-		GetMesh()->SetSimulatePhysics(true);
-		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	}
+			// Remove extension
+			CurrentLevelName =
+				CurrentLevelName.Replace(TEXT(".umap"), TEXT(""));
+
+			// Reload the current level
+			UGameplayStatics::OpenLevel(GetWorld(), FName(*CurrentLevelName));
+		},
+		2.0f, // Delay before reset
+		false);
 }
 
 bool AMyCharacter::IsAttacking() const

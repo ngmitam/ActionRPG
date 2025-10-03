@@ -25,15 +25,19 @@ A modern Action RPG built with Unreal Engine 5, showcasing advanced game develop
 ### Combat System
 
 -   **Martial Arts Mechanics**: Implemented traditional Korean martial arts combat with fluid animations
--   **Combo System**: Chain attacks with timing-based inputs for dynamic gameplay
+-   **Combo System**: Chain attacks with timing-based inputs for dynamic gameplay, including boss combo mechanics
+-   **Stun Mechanics**: Enemy stun system for interrupting attacks and creating combat opportunities
 -   **Damage & Health**: Robust health management and damage calculation systems
 -   **Ability System**: Custom gameplay abilities for attacks, effects, and character progression
+-   **Boss Encounters**: Advanced boss fights with spear attacks, random attack selection, and animation notifies
 
 ### AI & Enemies
 
 -   **Behavior Trees**: Intelligent enemy AI with patrol, alert, and attack behaviors
--   **Boss Encounters**: Special boss areas with unique mechanics and triggers
--   **Enemy Types**: Diverse enemy classes with different combat styles
+-   **Detection Systems**: Configurable detection ranges and alerting mechanisms for responsive AI
+-   **Boss Encounters**: Special boss areas with unique mechanics, spear attacks, and triggers
+-   **Enemy Types**: Diverse enemy classes with different combat styles and stun vulnerabilities
+-   **Targeting System**: Camera lock and input actions for precise enemy targeting
 
 ### Animation & Visuals
 
@@ -45,16 +49,19 @@ A modern Action RPG built with Unreal Engine 5, showcasing advanced game develop
 ### Technical Implementation
 
 -   **Modular Architecture**: Clean C++ code structure with reusable components
--   **Performance Optimization**: Efficient rendering and asset management
+-   **Performance Optimization**: Efficient rendering and asset management, including optimized animation handling via Behavior Tree services
 -   **Cross-Platform Builds**: Configured for Windows development and deployment
 -   **Build Automation**: Custom VS Code tasks for streamlined development workflow
--   **UI System**: Loading screens, player UI, and pause menus
+-   **UI System**: Loading screens, player UI, pause menus with resume/quit functionality, and centralized input management
+-   **Gameplay Ability System (GAS)**: Advanced ability and attribute management with GameplayEffect assets
 
 ### Game Features
 
 -   **RPG Elements**: Character progression and skill trees
 -   **Interactive Environments**: Dynamic world with responsive objects
 -   **Arena Gameplay**: Dedicated combat arena for testing mechanics
+-   **Boss Areas**: Specialized zones for challenging boss encounters
+-   **Stun Mechanics**: Combat interruptions for strategic gameplay
 
 ## 🛠️ Prerequisites
 
@@ -163,6 +170,8 @@ For major changes, please open an issue first to discuss what you would like to 
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
+© 2025 Nguyen Minh Tam. All rights reserved.
 
 ## 🙏 Acknowledgments
 

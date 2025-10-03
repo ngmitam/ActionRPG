@@ -18,9 +18,9 @@ AMyBoss::AMyBoss()
 		GetMesh(), TEXT("hand_r")); // Attach to right hand socket
 
 	// Boss has higher health
-	MaxHealth = BossMaxHealth;
-	Health = BossMaxHealth;
-	AttackDamage = BossAttackDamage;
+	MaxHealth = 300.0f;
+	Health = 300.0f;
+	AttackDamage = 15.0f;
 
 	// Boss is 1.3 times larger
 	GetMesh()->SetRelativeScale3D(FVector(1.3f, 1.3f, 1.3f));
@@ -60,9 +60,14 @@ void AMyBoss::PerformBossAttack(ACharacter *Player)
 	CurrentAttackType = AttackType;
 
 	// Play the attack
-	PlayAttack(AttackType);
+	if(PlayAttack(AttackType))
+	{
+		bIsAttacking = true;
 
-	bIsAttacking = true;
+		// Fallback timer to reset attack state if montage doesn't end
+		GetWorld()->GetTimerManager().SetTimer(AttackResetTimerHandle, this,
+			&AMyBoss::ResetAttackState, 5.0f, false);
+	}
 }
 
 void AMyBoss::ResetAttackState()
@@ -70,6 +75,9 @@ void AMyBoss::ResetAttackState()
 	bIsAttacking = false;
 	bIsInCombo = false;
 	CurrentAttackType = EBossAttackType::Attack1;
+
+	// Clear the fallback timer
+	GetWorld()->GetTimerManager().ClearTimer(AttackResetTimerHandle);
 }
 
 void AMyBoss::OnComboInterrupted()
@@ -78,6 +86,21 @@ void AMyBoss::OnComboInterrupted()
 	{
 		// Interrupt combo and stun
 		bIsInCombo = false;
+
+		// Stop the current montage
+		USkeletalMeshComponent *SkeletalMesh = GetMesh();
+		if(SkeletalMesh)
+		{
+			UAnimInstance *AnimInstance = SkeletalMesh->GetAnimInstance();
+			if(AnimInstance)
+			{
+				AnimInstance->Montage_Stop(0.2f); // Blend out over 0.2 seconds
+			}
+		}
+
+		// Reset attack state since combo is interrupted
+		ResetAttackState();
+
 		SetStunned(true);
 
 		// Reset after stun duration
@@ -87,12 +110,41 @@ void AMyBoss::OnComboInterrupted()
 	}
 }
 
-void AMyBoss::InitializeDefaultAttributes()
+float AMyBoss::TakeDamage(float DamageAmount,
+	struct FDamageEvent const &DamageEvent, class AController *EventInstigator,
+	AActor *DamageCauser)
 {
-	// Boss has higher health
-	MaxHealth = BossMaxHealth;
-	Health = BossMaxHealth;
-	AttackDamage = BossAttackDamage;
+	float ActualDamage = Super::TakeDamage(
+		DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	// Apply damage to simple health
+	Health = FMath::Max(0.0f, Health - ActualDamage);
+	UpdateHealthBar();
+
+	if(Health <= 0.0f)
+	{
+		// Death clears stun
+		SetStunned(false);
+		HandleDeath();
+	}
+	else
+	{
+		// Stun only if in combo
+		if(bIsInCombo)
+		{
+			SetStunned(true);
+			// Interrupt combo
+			OnComboInterrupted();
+			// reset bIsInCombo to false
+			bIsInCombo = false;
+		}
+		else
+		{
+			SetStunned(false);
+		}
+	}
+
+	return ActualDamage;
 }
 
 void AMyBoss::OnAttackNotify()
@@ -134,7 +186,7 @@ EBossAttackType AMyBoss::SelectRandomAttack()
 	}
 }
 
-void AMyBoss::PlayAttack(EBossAttackType AttackType)
+bool AMyBoss::PlayAttack(EBossAttackType AttackType)
 {
 	UAnimMontage *MontageToPlay = nullptr;
 
@@ -142,9 +194,11 @@ void AMyBoss::PlayAttack(EBossAttackType AttackType)
 	{
 	case EBossAttackType::Attack1:
 		MontageToPlay = Attack1Montage;
+		bIsInCombo = false;
 		break;
 	case EBossAttackType::Attack2:
 		MontageToPlay = Attack2Montage;
+		bIsInCombo = false;
 		break;
 	case EBossAttackType::Combo:
 		MontageToPlay = ComboMontage;
@@ -166,9 +220,11 @@ void AMyBoss::PlayAttack(EBossAttackType AttackType)
 				AnimInstance->Montage_Play(MontageToPlay);
 				AnimInstance->OnMontageEnded.AddDynamic(
 					this, &AMyBoss::OnAttackMontageEnded);
+				return true;
 			}
 		}
 	}
+	return false;
 }
 
 void AMyBoss::ApplyDamageToPlayer(ACharacter *Player)
