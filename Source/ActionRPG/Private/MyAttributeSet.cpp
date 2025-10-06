@@ -14,7 +14,6 @@ UMyAttributeSet::UMyAttributeSet()
 	InitMaxHealth(100.0f);
 	InitStamina(100.0f);
 	InitMaxStamina(100.0f);
-	InitBaseDamage(10.0f);
 	InitMaxWalkSpeed(300.0f); // Default walk speed
 	InitStunDuration(0.0f);
 }
@@ -32,8 +31,6 @@ void UMyAttributeSet::GetLifetimeReplicatedProps(
 		UMyAttributeSet, Stamina, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(
 		UMyAttributeSet, MaxStamina, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(
-		UMyAttributeSet, BaseDamage, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(
 		UMyAttributeSet, MaxWalkSpeed, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(
@@ -138,12 +135,6 @@ void UMyAttributeSet::OnRep_MaxStamina(
 	const FGameplayAttributeData &OldMaxStamina)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UMyAttributeSet, MaxStamina, OldMaxStamina);
-}
-
-void UMyAttributeSet::OnRep_BaseDamage(
-	const FGameplayAttributeData &OldBaseDamage)
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UMyAttributeSet, BaseDamage, OldBaseDamage);
 }
 
 void UMyAttributeSet::OnRep_StunDuration(

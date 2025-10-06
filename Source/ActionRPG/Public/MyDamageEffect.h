@@ -17,10 +17,6 @@ class ACTIONRPG_API UMyDamageEffect : public UGameplayEffect
 public:
 	UMyDamageEffect();
 
-	// Damage magnitude (set in editor or via blueprint)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
-	float BaseDamage = 10.0f;
-
 	// Damage type tag
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 	FGameplayTag DamageTypeTag;

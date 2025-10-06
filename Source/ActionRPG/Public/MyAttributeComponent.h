@@ -44,6 +44,13 @@ public:
 	void InitializeAbilitySystem();
 	void DeferredInitialize();
 
+	// Helper methods for initialization
+	bool IsReadyForInitialization() const;
+	void ScheduleRetryInitialization();
+	bool CanInitializeAbilitySystem() const;
+	void SetupAttributeChangeDelegates();
+	void SetInitialCharacterMovement();
+
 	// Attribute accessors
 	UFUNCTION(BlueprintPure, Category = "Attributes")
 	float GetHealth() const;
@@ -56,9 +63,6 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Attributes")
 	float GetMaxStamina() const;
-
-	UFUNCTION(BlueprintPure, Category = "Attributes")
-	float GetBaseDamage() const;
 
 	UFUNCTION(BlueprintPure, Category = "Attributes")
 	float GetMaxWalkSpeed() const;
@@ -100,6 +104,11 @@ public:
 			   && AbilitySystemComponent->AbilityActorInfo.IsValid();
 	}
 
+	// Helper validation methods
+	bool HasValidAttributeSet() const { return AttributeSet != nullptr; }
+	bool HasValidOwner() const { return GetOwner() != nullptr; }
+	bool IsAttributeInitialized(const FGameplayAttribute &Attribute) const;
+
 	// Set default attribute values
 	void SetDefaultAttributes(float Health = 100.0f, float MaxHealth = 100.0f,
 		float Stamina = 100.0f, float MaxStamina = 100.0f);
@@ -107,7 +116,6 @@ public:
 	// Set default attribute values using struct
 	void SetDefaultAttributes(const FDefaultAttributes &Attributes);
 
-	float GetDefaultBaseDamage() const { return DefaultBaseDamage; }
 	float GetDefaultMaxWalkSpeed() const { return DefaultMaxWalkSpeed; }
 
 protected:
@@ -145,10 +153,6 @@ protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes",
 		meta = (ClampMin = "0.0"))
 	float DefaultMaxStamina = 100.0f;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes",
-		meta = (ClampMin = "0.0"))
-	float DefaultBaseDamage = 10.0f;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes",
 		meta = (ClampMin = "0.0"))

@@ -45,7 +45,10 @@ void AMyBaseCharacter::Tick(float DeltaTime)
 void AMyBaseCharacter::HandleDeath()
 {
 	// Base implementation - disable movement and set death status
-	GetCharacterMovement()->DisableMovement();
+	if(UCharacterMovementComponent *MovementComp = GetCharacterMovement())
+	{
+		MovementComp->DisableMovement();
+	}
 
 	bIsDead = true;
 
@@ -100,33 +103,49 @@ void AMyBaseCharacter::OnHealthChanged(float NewHealth)
 
 void AMyBaseCharacter::InitializeDefaultAttributes()
 {
-	if(AttributeComponent && AttributeComponent->GetAbilitySystemComponent()
-		&& AttributeComponent->GetAbilitySystemComponent()
-			   ->AbilityActorInfo.IsValid()
-		&& AttributeComponent->GetAttributeSet())
-	{
-		// Bind to health change delegate
-		AttributeComponent->GetOnHealthChanged().AddUObject(
-			this, &AMyBaseCharacter::OnHealthChanged);
-
-		// Set default attributes using struct
-		FDefaultAttributes DefaultAttrs;
-		DefaultAttrs.Health = DefaultHealth;
-		DefaultAttrs.MaxHealth = DefaultMaxHealth;
-		DefaultAttrs.Stamina = DefaultStamina;
-		DefaultAttrs.MaxStamina = DefaultMaxStamina;
-		DefaultAttrs.BaseDamage = AttributeComponent->GetDefaultBaseDamage();
-		DefaultAttrs.MaxWalkSpeed =
-			AttributeComponent->GetDefaultMaxWalkSpeed();
-
-		AttributeComponent->SetDefaultAttributes(DefaultAttrs);
-	}
-	else
+	if(!IsAttributeSystemValid())
 	{
 		// Try again next frame if not ready
 		GetWorld()->GetTimerManager().SetTimerForNextTick(
 			this, &AMyBaseCharacter::InitializeDefaultAttributes);
+		return;
 	}
+
+	// Only initialize if not already done
+	if(bAttributesInitialized)
+	{
+		return;
+	}
+
+	// Bind to health change delegate
+	AttributeComponent->GetOnHealthChanged().AddUObject(
+		this, &AMyBaseCharacter::OnHealthChanged);
+
+	// Set default attributes using struct
+	FDefaultAttributes DefaultAttrs;
+
+	// Use blueprint-set values if they differ from class defaults, otherwise
+	// use defaults
+	DefaultAttrs.Health = (DefaultHealth != DefaultValues::DefaultHealth)
+							  ? DefaultHealth
+							  : DefaultValues::DefaultHealth;
+	DefaultAttrs.MaxHealth =
+		(DefaultMaxHealth != DefaultValues::DefaultMaxHealth)
+			? DefaultMaxHealth
+			: DefaultValues::DefaultMaxHealth;
+	DefaultAttrs.Stamina = (DefaultStamina != DefaultValues::DefaultStamina)
+							   ? DefaultStamina
+							   : DefaultValues::DefaultStamina;
+	DefaultAttrs.MaxStamina =
+		(DefaultMaxStamina != DefaultValues::DefaultMaxStamina)
+			? DefaultMaxStamina
+			: DefaultValues::DefaultMaxStamina;
+	DefaultAttrs.MaxWalkSpeed = AttributeComponent->GetDefaultMaxWalkSpeed();
+
+	AttributeComponent->SetDefaultAttributes(DefaultAttrs);
+
+	// Mark as initialized
+	bAttributesInitialized = true;
 }
 
 void AMyBaseCharacter::InitializeAttributeComponent()

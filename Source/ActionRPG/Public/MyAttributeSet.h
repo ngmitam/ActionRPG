@@ -51,12 +51,6 @@ public:
 	FGameplayAttributeData MaxStamina;
 	ATTRIBUTE_ACCESSORS(UMyAttributeSet, MaxStamina);
 
-	// Damage
-	UPROPERTY(BlueprintReadOnly, Category = "Attributes | Damage",
-		ReplicatedUsing = OnRep_BaseDamage)
-	FGameplayAttributeData BaseDamage;
-	ATTRIBUTE_ACCESSORS(UMyAttributeSet, BaseDamage);
-
 	// Current Walk Speed
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes | Movement",
 		ReplicatedUsing = OnRep_MaxWalkSpeed)
@@ -80,9 +74,6 @@ public:
 
 	UFUNCTION()
 	void OnRep_MaxStamina(const FGameplayAttributeData &OldMaxStamina);
-
-	UFUNCTION()
-	void OnRep_BaseDamage(const FGameplayAttributeData &OldBaseDamage);
 
 	UFUNCTION()
 	void OnRep_MaxWalkSpeed(const FGameplayAttributeData &OldMaxWalkSpeed);

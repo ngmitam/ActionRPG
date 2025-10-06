@@ -9,6 +9,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "MyAbilityTypes.h"
 #include "MyAttributeComponent.h"
 #include "MyEnemy.h"
 #include "MyPlayerUI.h"
@@ -234,25 +235,25 @@ void AMyCharacter::Dodge()
 	AttributeComponent->SetDodging(true);
 	ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Dodge));
 
-	// Reset dodge status after cooldown and cancel dodge ability
+	// Reset dodge status after cooldown
 	FTimerHandle UnusedHandle;
-	GetWorld()->GetTimerManager().SetTimer(
-		UnusedHandle,
-		[this]()
+	GetWorld()->GetTimerManager().SetTimer(UnusedHandle, this,
+		&AMyCharacter::ResetDodgeStatus, DefaultValues::DodgeCooldown, false);
+}
+
+void AMyCharacter::ResetDodgeStatus()
+{
+	if(AttributeComponent)
+	{
+		AttributeComponent->SetDodging(false);
+		if(UAbilitySystemComponent *ASCInner = TryGetAbilitySystem())
 		{
-			if(AttributeComponent)
-			{
-				AttributeComponent->SetDodging(false);
-				if(UAbilitySystemComponent *ASCInner = TryGetAbilitySystem())
-				{
-					FGameplayTagContainer DodgeAbilityTagContainer;
-					DodgeAbilityTagContainer.AddTag(
-						FGameplayTag::RequestGameplayTag(AbilityTags::Dodge));
-					ASCInner->CancelAbilities(&DodgeAbilityTagContainer);
-				}
-			}
-		},
-		DefaultValues::DodgeCooldown, false);
+			FGameplayTagContainer DodgeAbilityTagContainer;
+			DodgeAbilityTagContainer.AddTag(
+				FGameplayTag::RequestGameplayTag(AbilityTags::Dodge));
+			ASCInner->CancelAbilities(&DodgeAbilityTagContainer);
+		}
+	}
 }
 
 void AMyCharacter::Attack()
@@ -302,30 +303,28 @@ void AMyCharacter::HandleDeath()
 		PC->DisableInput(PC);
 	}
 
-	// Instead of destroying, reset the level
+	// Reset the level after a delay
 	FTimerHandle ResetTimer;
-	GetWorld()->GetTimerManager().SetTimer(
-		ResetTimer,
-		[this]()
-		{
-			// Get current level name
-			FString CurrentLevelName = GetWorld()->GetMapName();
-			// Remove any path prefix if present
-			int32 LastSlashIndex;
-			if(CurrentLevelName.FindLastChar('/', LastSlashIndex))
-			{
-				CurrentLevelName = CurrentLevelName.Right(
-					CurrentLevelName.Len() - LastSlashIndex - 1);
-			}
-			// Remove extension
-			CurrentLevelName =
-				CurrentLevelName.Replace(TEXT(".umap"), TEXT(""));
+	GetWorld()->GetTimerManager().SetTimer(ResetTimer, this,
+		&AMyCharacter::ResetLevel, DefaultValues::DeathResetDelay, false);
+}
 
-			// Reload the current level
-			UGameplayStatics::OpenLevel(GetWorld(), FName(*CurrentLevelName));
-		},
-		2.0f, // Delay before reset
-		false);
+void AMyCharacter::ResetLevel()
+{
+	// Get current level name
+	FString CurrentLevelName = GetWorld()->GetMapName();
+	// Remove any path prefix if present
+	int32 LastSlashIndex;
+	if(CurrentLevelName.FindLastChar('/', LastSlashIndex))
+	{
+		CurrentLevelName =
+			CurrentLevelName.Right(CurrentLevelName.Len() - LastSlashIndex - 1);
+	}
+	// Remove extension
+	CurrentLevelName = CurrentLevelName.Replace(TEXT(".umap"), TEXT(""));
+
+	// Reload the current level
+	UGameplayStatics::OpenLevel(GetWorld(), FName(*CurrentLevelName));
 }
 
 bool AMyCharacter::IsAttacking() const

@@ -5,11 +5,15 @@
 #include "AbilitySystemComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameplayEffect.h"
 #include "Kismet/GameplayStatics.h"
+#include "MyAttackAbility.h"
 #include "MyCharacter.h"
 #include "MyDamageEffect.h"
 #include "MyEnemy.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 
 UMyAnimNotify_AttackDamage::UMyAnimNotify_AttackDamage()
 {
@@ -70,6 +74,8 @@ void UMyAnimNotify_AttackDamage::PerformTraceAndApplyDamage(AActor *OwnerActor)
 	bool bHit = World->SweepMultiByChannel(HitResults, StartLocation,
 		EndLocation, FQuat::Identity, ECC_Pawn, SphereShape, QueryParams);
 
+	bool bSpawnedParticle = false;
+
 	if(bHit)
 	{
 		for(const FHitResult &Hit : HitResults)
@@ -87,6 +93,19 @@ void UMyAnimNotify_AttackDamage::PerformTraceAndApplyDamage(AActor *OwnerActor)
 					// For Enemy, use simple damage
 					UGameplayStatics::ApplyDamage(
 						Enemy, DamageAmount, nullptr, OwnerActor, nullptr);
+
+					// Apply knockback to prevent overlap
+					if(UCharacterMovementComponent *Movement =
+							Enemy->GetCharacterMovement())
+					{
+						FVector KnockbackDirection =
+							(Enemy->GetActorLocation()
+								- OwnerActor->GetActorLocation())
+								.GetSafeNormal();
+						float KnockbackForce = 500.0f; // Adjust as needed
+						Movement->AddImpulse(
+							KnockbackDirection * KnockbackForce, true);
+					}
 				}
 				else if(AMyCharacter *Player = Cast<AMyCharacter>(HitActor))
 				{
@@ -116,6 +135,33 @@ void UMyAnimNotify_AttackDamage::PerformTraceAndApplyDamage(AActor *OwnerActor)
 						}
 					}
 				}
+
+				// Spawn particle effect if from active attack ability
+				if(!bSpawnedParticle && ASC)
+				{
+					TArray<FGameplayAbilitySpec> Specs =
+						ASC->GetActivatableAbilities();
+					for(const FGameplayAbilitySpec &Spec : Specs)
+					{
+						if(Spec.IsActive()
+							&& Spec.Ability->IsA(
+								UMyAttackAbility::StaticClass()))
+						{
+							UMyAttackAbility *AttackAbility =
+								Cast<UMyAttackAbility>(Spec.Ability);
+							if(AttackAbility
+								&& AttackAbility->AttackParticleEffect)
+							{
+								UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+									World, AttackAbility->AttackParticleEffect,
+									Hit.Location, FRotator::ZeroRotator);
+								bSpawnedParticle = true;
+								break;
+							}
+						}
+					}
+				}
+
 				break; // Apply to first hit
 			}
 		}

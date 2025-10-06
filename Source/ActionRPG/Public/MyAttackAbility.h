@@ -7,6 +7,7 @@
 #include "MyAttackAbility.generated.h"
 
 class UAnimMontage;
+class UNiagaraSystem;
 
 /**
  * Attack Ability with combo system
@@ -51,6 +52,9 @@ public:
 
 	// Get max combo index (MaxComboCount - 1)
 	int32 GetMaxComboIndex() const { return MaxComboCount - 1; }
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
+	UNiagaraSystem *AttackParticleEffect;
 
 protected:
 	// Combo system properties

@@ -40,18 +40,6 @@ public:
 	AMyCharacter();
 
 	/**
-	 * @brief Get the ability system component from the AttributeComponent
-	 * @return Pointer to the ability system component, or nullptr if not
-	 * available
-	 */
-	UAbilitySystemComponent *GetAbilitySystem() const
-	{
-		return AttributeComponent
-				   ? AttributeComponent->GetAbilitySystemComponent()
-				   : nullptr;
-	}
-
-	/**
 	 * @brief Called every frame
 	 * @param DeltaTime Time elapsed since last frame
 	 */
@@ -156,6 +144,12 @@ private:
 
 	// Helper to get the active attack ability
 	UMyAttackAbility *GetActiveAttackAbility() const;
+
+	// Dodge reset helper
+	void ResetDodgeStatus();
+
+	// Level reset helper
+	void ResetLevel();
 
 	// Enemy targeting
 	AMyEnemy *CurrentTarget;

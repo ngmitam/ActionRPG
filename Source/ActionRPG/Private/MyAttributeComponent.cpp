@@ -47,35 +47,20 @@ void UMyAttributeComponent::BeginPlay()
 
 void UMyAttributeComponent::DeferredInitialize()
 {
-	// Verify that we have a valid owner (should be the character)
-	if(!ValidateOwner())
+	if(!IsReadyForInitialization())
 	{
-		// If no owner, try again next frame
-		GetWorld()->GetTimerManager().SetTimerForNextTick(
-			this, &UMyAttributeComponent::DeferredInitialize);
+		ScheduleRetryInitialization();
 		return;
 	}
 
-	// Ensure AbilitySystemComponent exists and is registered
-	if(!IsAbilitySystemComponentRegistered())
-	{
-		// Component not created or registered, try again next frame
-		GetWorld()->GetTimerManager().SetTimerForNextTick(
-			this, &UMyAttributeComponent::DeferredInitialize);
-		return;
-	}
-
-	// Try to initialize AbilityActorInfo if not already done
 	if(!TryInitializeAbilityActorInfo())
 	{
 		HandleInitializationRetry();
 		return;
 	}
 
-	// Initialize GAS components
 	InitializeGASComponents();
 
-	// Double-check that AbilityActorInfo is now valid
 	if(IsAbilityActorInfoValid())
 	{
 		InitializeAbilitySystem();
@@ -84,6 +69,17 @@ void UMyAttributeComponent::DeferredInitialize()
 	{
 		HandleInitializationRetry();
 	}
+}
+
+bool UMyAttributeComponent::IsReadyForInitialization() const
+{
+	return ValidateOwner() && IsAbilitySystemComponentRegistered();
+}
+
+void UMyAttributeComponent::ScheduleRetryInitialization()
+{
+	GetWorld()->GetTimerManager().SetTimerForNextTick(
+		this, &UMyAttributeComponent::DeferredInitialize);
 }
 
 bool UMyAttributeComponent::ValidateOwner() const
@@ -143,54 +139,70 @@ bool UMyAttributeComponent::TryInitializeAbilityActorInfo()
 
 void UMyAttributeComponent::HandleInitializationRetry()
 {
-	// Still not ready, try again next frame (with a limit to prevent
-	// infinite loops)
 	static int32 RetryCount = 0;
 	if(RetryCount < DefaultValues::MaxInitializationRetries)
 	{
 		RetryCount++;
-		GetWorld()->GetTimerManager().SetTimerForNextTick(
-			this, &UMyAttributeComponent::DeferredInitialize);
+		ScheduleRetryInitialization();
+	}
+	else
+	{
+		// Log error after max retries
+		UE_LOG(LogTemp, Error,
+			TEXT("Failed to initialize Ability System Component after %d "
+				 "retries"),
+			DefaultValues::MaxInitializationRetries);
 	}
 }
 
 void UMyAttributeComponent::InitializeAbilitySystem()
 {
-	// Final validation before initializing
-	if(!IsAbilitySystemValid() || !GetOwner())
+	if(!CanInitializeAbilitySystem())
 	{
 		return;
 	}
 
-	// At this point, we know AbilitySystemComponent and AbilityActorInfo are
-	// valid and the owner is initialized, so we can safely proceed
-
-	// Now it's safe to initialize attributes and abilities
 	InitializeAttributes();
 	GiveDefaultAbilities();
+	SetupAttributeChangeDelegates();
+	SetInitialCharacterMovement();
+}
+
+bool UMyAttributeComponent::CanInitializeAbilitySystem() const
+{
+	return IsAbilitySystemValid() && GetOwner() != nullptr;
+}
+
+void UMyAttributeComponent::SetupAttributeChangeDelegates()
+{
+	if(!AttributeSet)
+	{
+		return;
+	}
 
 	// Subscribe to attribute change callbacks
-	if(AttributeSet)
-	{
-		AbilitySystemComponent
-			->GetGameplayAttributeValueChangeDelegate(
-				AttributeSet->GetStaminaAttribute())
-			.AddUObject(this, &UMyAttributeComponent::OnAttributeChange);
-		AbilitySystemComponent
-			->GetGameplayAttributeValueChangeDelegate(
-				AttributeSet->GetMaxWalkSpeedAttribute())
-			.AddUObject(this, &UMyAttributeComponent::OnAttributeChange);
-		AbilitySystemComponent
-			->GetGameplayAttributeValueChangeDelegate(
-				AttributeSet->GetHealthAttribute())
-			.AddUObject(this, &UMyAttributeComponent::OnAttributeChange);
+	AbilitySystemComponent
+		->GetGameplayAttributeValueChangeDelegate(
+			AttributeSet->GetStaminaAttribute())
+		.AddUObject(this, &UMyAttributeComponent::OnAttributeChange);
 
-		// If owner is a character, set initial walk speed
-		if(ACharacter *Character = Cast<ACharacter>(GetOwner()))
-		{
-			Character->GetCharacterMovement()->MaxWalkSpeed =
-				AttributeSet->GetMaxWalkSpeed();
-		}
+	AbilitySystemComponent
+		->GetGameplayAttributeValueChangeDelegate(
+			AttributeSet->GetMaxWalkSpeedAttribute())
+		.AddUObject(this, &UMyAttributeComponent::OnAttributeChange);
+
+	AbilitySystemComponent
+		->GetGameplayAttributeValueChangeDelegate(
+			AttributeSet->GetHealthAttribute())
+		.AddUObject(this, &UMyAttributeComponent::OnAttributeChange);
+}
+
+void UMyAttributeComponent::SetInitialCharacterMovement()
+{
+	if(ACharacter *Character = Cast<ACharacter>(GetOwner()))
+	{
+		Character->GetCharacterMovement()->MaxWalkSpeed =
+			AttributeSet->GetMaxWalkSpeed();
 	}
 }
 
@@ -207,7 +219,6 @@ void UMyAttributeComponent::InitializeAttributes()
 	DefaultAttrs.MaxHealth = DefaultMaxHealth;
 	DefaultAttrs.Stamina = DefaultStamina;
 	DefaultAttrs.MaxStamina = DefaultMaxStamina;
-	DefaultAttrs.BaseDamage = DefaultBaseDamage;
 	DefaultAttrs.MaxWalkSpeed = DefaultMaxWalkSpeed;
 
 	SetDefaultAttributes(DefaultAttrs);
@@ -218,8 +229,9 @@ void UMyAttributeComponent::InitializeAttributes()
 		if(GEClass)
 		{
 			FGameplayEffectSpecHandle SpecHandle =
-				AbilitySystemComponent->MakeOutgoingSpec(
-					GEClass, 1.0f, FGameplayEffectContextHandle());
+				AbilitySystemComponent->MakeOutgoingSpec(GEClass,
+					GameplayConstants::DefaultAbilityLevel,
+					FGameplayEffectContextHandle());
 			if(SpecHandle.IsValid())
 			{
 				AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(
@@ -285,11 +297,6 @@ float UMyAttributeComponent::GetStamina() const
 float UMyAttributeComponent::GetMaxStamina() const
 {
 	return AttributeSet ? AttributeSet->GetMaxStamina() : 0.0f;
-}
-
-float UMyAttributeComponent::GetBaseDamage() const
-{
-	return AttributeSet ? AttributeSet->GetBaseDamage() : 0.0f;
 }
 
 float UMyAttributeComponent::GetMaxWalkSpeed() const
@@ -362,23 +369,37 @@ void UMyAttributeComponent::SetDefaultAttributes(
 		return;
 	}
 
-	// Use ApplyModToAttribute to set the base values
-	AbilitySystemComponent->ApplyModToAttribute(
-		AttributeSet->GetHealthAttribute(), EGameplayModOp::Override, Health);
-	AbilitySystemComponent->ApplyModToAttribute(
-		AttributeSet->GetMaxHealthAttribute(), EGameplayModOp::Override,
-		MaxHealth);
-	AbilitySystemComponent->ApplyModToAttribute(
-		AttributeSet->GetStaminaAttribute(), EGameplayModOp::Override, Stamina);
-	AbilitySystemComponent->ApplyModToAttribute(
-		AttributeSet->GetMaxStaminaAttribute(), EGameplayModOp::Override,
-		MaxStamina);
-	AbilitySystemComponent->ApplyModToAttribute(
-		AttributeSet->GetBaseDamageAttribute(), EGameplayModOp::Override,
-		DefaultBaseDamage);
-	AbilitySystemComponent->ApplyModToAttribute(
-		AttributeSet->GetMaxWalkSpeedAttribute(), EGameplayModOp::Override,
-		DefaultMaxWalkSpeed);
+	// Only set attributes if they haven't been set before
+	if(!IsAttributeInitialized(AttributeSet->GetHealthAttribute()))
+	{
+		AbilitySystemComponent->ApplyModToAttribute(
+			AttributeSet->GetHealthAttribute(), EGameplayModOp::Override,
+			Health);
+	}
+	if(!IsAttributeInitialized(AttributeSet->GetMaxHealthAttribute()))
+	{
+		AbilitySystemComponent->ApplyModToAttribute(
+			AttributeSet->GetMaxHealthAttribute(), EGameplayModOp::Override,
+			MaxHealth);
+	}
+	if(!IsAttributeInitialized(AttributeSet->GetStaminaAttribute()))
+	{
+		AbilitySystemComponent->ApplyModToAttribute(
+			AttributeSet->GetStaminaAttribute(), EGameplayModOp::Override,
+			Stamina);
+	}
+	if(!IsAttributeInitialized(AttributeSet->GetMaxStaminaAttribute()))
+	{
+		AbilitySystemComponent->ApplyModToAttribute(
+			AttributeSet->GetMaxStaminaAttribute(), EGameplayModOp::Override,
+			MaxStamina);
+	}
+	if(!IsAttributeInitialized(AttributeSet->GetMaxWalkSpeedAttribute()))
+	{
+		AbilitySystemComponent->ApplyModToAttribute(
+			AttributeSet->GetMaxWalkSpeedAttribute(), EGameplayModOp::Override,
+			DefaultMaxWalkSpeed);
+	}
 }
 
 void UMyAttributeComponent::SetDefaultAttributes(
@@ -389,23 +410,68 @@ void UMyAttributeComponent::SetDefaultAttributes(
 		return;
 	}
 
-	// Use ApplyModToAttribute to set the base values
-	AbilitySystemComponent->ApplyModToAttribute(
-		AttributeSet->GetHealthAttribute(), EGameplayModOp::Override,
-		Attributes.Health);
-	AbilitySystemComponent->ApplyModToAttribute(
-		AttributeSet->GetMaxHealthAttribute(), EGameplayModOp::Override,
-		Attributes.MaxHealth);
-	AbilitySystemComponent->ApplyModToAttribute(
-		AttributeSet->GetStaminaAttribute(), EGameplayModOp::Override,
-		Attributes.Stamina);
-	AbilitySystemComponent->ApplyModToAttribute(
-		AttributeSet->GetMaxStaminaAttribute(), EGameplayModOp::Override,
-		Attributes.MaxStamina);
-	AbilitySystemComponent->ApplyModToAttribute(
-		AttributeSet->GetBaseDamageAttribute(), EGameplayModOp::Override,
-		Attributes.BaseDamage);
-	AbilitySystemComponent->ApplyModToAttribute(
-		AttributeSet->GetMaxWalkSpeedAttribute(), EGameplayModOp::Override,
-		Attributes.MaxWalkSpeed);
+	// Only set attributes if they haven't been set before
+	if(!IsAttributeInitialized(AttributeSet->GetHealthAttribute()))
+	{
+		AbilitySystemComponent->ApplyModToAttribute(
+			AttributeSet->GetHealthAttribute(), EGameplayModOp::Override,
+			Attributes.Health);
+	}
+	if(!IsAttributeInitialized(AttributeSet->GetMaxHealthAttribute()))
+	{
+		AbilitySystemComponent->ApplyModToAttribute(
+			AttributeSet->GetMaxHealthAttribute(), EGameplayModOp::Override,
+			Attributes.MaxHealth);
+	}
+	if(!IsAttributeInitialized(AttributeSet->GetStaminaAttribute()))
+	{
+		AbilitySystemComponent->ApplyModToAttribute(
+			AttributeSet->GetStaminaAttribute(), EGameplayModOp::Override,
+			Attributes.Stamina);
+	}
+	if(!IsAttributeInitialized(AttributeSet->GetMaxStaminaAttribute()))
+	{
+		AbilitySystemComponent->ApplyModToAttribute(
+			AttributeSet->GetMaxStaminaAttribute(), EGameplayModOp::Override,
+			Attributes.MaxStamina);
+	}
+	if(!IsAttributeInitialized(AttributeSet->GetMaxWalkSpeedAttribute()))
+	{
+		AbilitySystemComponent->ApplyModToAttribute(
+			AttributeSet->GetMaxWalkSpeedAttribute(), EGameplayModOp::Override,
+			Attributes.MaxWalkSpeed);
+	}
+}
+
+bool UMyAttributeComponent::IsAttributeInitialized(
+	const FGameplayAttribute &Attribute) const
+{
+	if(!HasValidAttributeSet())
+	{
+		return false;
+	}
+
+	// Check if the attribute has been set (not still 0.0f)
+	if(Attribute == AttributeSet->GetHealthAttribute())
+	{
+		return AttributeSet->GetHealth() > 0.0f;
+	}
+	if(Attribute == AttributeSet->GetMaxHealthAttribute())
+	{
+		return AttributeSet->GetMaxHealth() > 0.0f;
+	}
+	if(Attribute == AttributeSet->GetStaminaAttribute())
+	{
+		return AttributeSet->GetStamina() > 0.0f;
+	}
+	if(Attribute == AttributeSet->GetMaxStaminaAttribute())
+	{
+		return AttributeSet->GetMaxStamina() > 0.0f;
+	}
+	if(Attribute == AttributeSet->GetMaxWalkSpeedAttribute())
+	{
+		return AttributeSet->GetMaxWalkSpeed() > 0.0f;
+	}
+
+	return true; // For other attributes, assume initialized
 }

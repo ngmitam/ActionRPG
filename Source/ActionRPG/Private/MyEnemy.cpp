@@ -32,9 +32,10 @@ AMyEnemy::AMyEnemy()
 		ComponentNames::HealthBarWidget);
 	HealthBarWidget->SetupAttachment(GetRootComponent());
 	HealthBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
-	HealthBarWidget->SetDrawSize(FVector2D(200.0f, 50.0f));
+	HealthBarWidget->SetDrawSize(
+		FVector2D(UIConstants::HealthBarWidth, UIConstants::HealthBarHeight));
 	HealthBarWidget->SetRelativeLocation(
-		FVector(0.0f, 0.0f, 100.0f));	   // Above the enemy
+		FVector(0.0f, 0.0f, UIConstants::HealthBarZOffset)); // Above the enemy
 	HealthBarWidget->SetVisibility(false); // Hidden by default
 
 	// AttributeComponent is now created in base class
@@ -76,11 +77,11 @@ void AMyEnemy::MoveTowardsPlayer(float DeltaTime)
 {
 	FVector Direction =
 		PlayerCharacter->GetActorLocation() - GetActorLocation();
-	Direction.Z = 0.0f; // Keep on ground
+	Direction.Z = GameplayConstants::GroundZCoordinate; // Keep on ground
 	Direction.Normalize();
 
 	// Simple move towards player
-	AddMovementInput(Direction, 1.0f);
+	AddMovementInput(Direction, GameplayConstants::DefaultMovementInput);
 }
 
 void AMyEnemy::AttackPlayer(ACharacter *Player)
@@ -102,7 +103,7 @@ void AMyEnemy::AttackPlayer(ACharacter *Player)
 
 		// Face the player before attacking
 		FVector Direction = Player->GetActorLocation() - GetActorLocation();
-		Direction.Z = 0.0f; // Keep on ground
+		Direction.Z = GameplayConstants::GroundZCoordinate; // Keep on ground
 		if(!Direction.IsNearlyZero())
 		{
 			FRotator NewRotation = Direction.Rotation();
@@ -118,7 +119,8 @@ void AMyEnemy::AttackPlayer(ACharacter *Player)
 				UAnimInstance *AnimInstance = SkeletalMesh->GetAnimInstance();
 				if(AnimInstance)
 				{
-					AnimInstance->Montage_Stop(0.0f);
+					AnimInstance->Montage_Stop(
+						GameplayConstants::GroundZCoordinate);
 					// Clear previous binding to avoid multiple calls
 					AnimInstance->OnMontageEnded.RemoveDynamic(
 						this, &AMyEnemy::OnAttackMontageEnded);

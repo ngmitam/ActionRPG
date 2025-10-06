@@ -106,4 +106,7 @@ public:
 protected:
 	// Initialize the attribute component
 	void InitializeAttributeComponent();
+
+	// Flag to track if default attributes have been initialized
+	bool bAttributesInitialized = false;
 };

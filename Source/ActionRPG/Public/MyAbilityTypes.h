@@ -61,10 +61,11 @@ constexpr float DefaultHealth = 100.0f;
 constexpr float DefaultMaxHealth = 100.0f;
 constexpr float DefaultStamina = 100.0f;
 constexpr float DefaultMaxStamina = 100.0f;
-constexpr float DefaultBaseDamage = 10.0f;
 constexpr float DefaultMaxWalkSpeed = 300.0f;
 constexpr float EnemyDetectionRange = 5000.0f;
 constexpr float EnemyUpdateInterval = 1.0f;
+constexpr float LoadingScreenDelay = 2.0f;
+constexpr float DeathResetDelay = 2.0f;
 } // namespace DefaultValues
 
 // UI Constants
@@ -74,6 +75,9 @@ constexpr float HealthHighThreshold = 0.6f;
 constexpr float HealthMediumThreshold = 0.3f;
 constexpr float StaminaHighThreshold = 0.5f;
 constexpr float StaminaMediumThreshold = 0.2f;
+constexpr float HealthBarWidth = 200.0f;
+constexpr float HealthBarHeight = 50.0f;
+constexpr float HealthBarZOffset = 100.0f;
 
 // UI Colors
 const FLinearColor HealthColorHigh = FLinearColor::Green;
@@ -84,6 +88,15 @@ const FLinearColor StaminaColorMedium =
 	FLinearColor(1.0f, 0.5f, 0.0f, 1.0f); // Orange
 const FLinearColor StaminaColorLow = FLinearColor::Red;
 } // namespace UIConstants
+
+// Gameplay Constants
+namespace GameplayConstants
+{
+constexpr float DefaultMovementInput = 1.0f;
+constexpr float GroundZCoordinate = 0.0f;
+constexpr float DefaultAbilityLevel = 1.0f;
+constexpr float StunDuration = 2.0f;
+} // namespace GameplayConstants
 
 // Default attribute configuration struct
 USTRUCT(BlueprintType)
@@ -102,9 +115,6 @@ struct FDefaultAttributes
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
 	float MaxStamina = DefaultValues::DefaultMaxStamina;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
-	float BaseDamage = DefaultValues::DefaultBaseDamage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
 	float MaxWalkSpeed = DefaultValues::DefaultMaxWalkSpeed;
