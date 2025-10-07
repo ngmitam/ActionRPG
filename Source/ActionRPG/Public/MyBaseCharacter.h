@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "MyAbilityTypes.h"
+#include "MyGameConfig.h"
 #include "MyAttributeComponent.h"
 #include "MyBaseCharacter.generated.h"
 
@@ -71,9 +72,6 @@ public:
 	// Called when health changes
 	void OnHealthChanged(float NewHealth);
 
-	// Initialize default attributes
-	virtual void InitializeDefaultAttributes();
-
 	// Death animation montage
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimMontage *DeathMontage;
@@ -86,27 +84,7 @@ public:
 	TSubclassOf<UMyAttributeComponent> AttributeComponentClass =
 		UMyAttributeComponent::StaticClass();
 
-	// Default attribute values
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
-	float DefaultHealth = DefaultValues::DefaultHealth;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
-	float DefaultMaxHealth = DefaultValues::DefaultMaxHealth;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
-	float DefaultStamina = DefaultValues::DefaultStamina;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
-	float DefaultMaxStamina = DefaultValues::DefaultMaxStamina;
-
 	// Death status
 	UPROPERTY(BlueprintReadOnly, Category = "Animation")
 	bool bIsDead = false;
-
-protected:
-	// Initialize the attribute component
-	void InitializeAttributeComponent();
-
-	// Flag to track if default attributes have been initialized
-	bool bAttributesInitialized = false;
 };

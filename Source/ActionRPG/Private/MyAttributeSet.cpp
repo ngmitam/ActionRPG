@@ -9,13 +9,6 @@
 
 UMyAttributeSet::UMyAttributeSet()
 {
-	// Initialize default values for attributes
-	InitHealth(100.0f);
-	InitMaxHealth(100.0f);
-	InitStamina(100.0f);
-	InitMaxStamina(100.0f);
-	InitMaxWalkSpeed(300.0f); // Default walk speed
-	InitStunDuration(0.0f);
 }
 
 void UMyAttributeSet::GetLifetimeReplicatedProps(

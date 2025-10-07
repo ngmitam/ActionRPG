@@ -69,17 +69,20 @@ void UMyPlayerUI::UpdateHealthUI()
 		HealthBar->SetPercent(HealthPercent);
 
 		// Change color based on health level
-		if(HealthPercent > UIConstants::HealthHighThreshold)
+		if(HealthPercent > FGameConfig::GetDefault().HealthHighThreshold)
 		{
-			HealthBar->SetFillColorAndOpacity(UIConstants::HealthColorHigh);
+			HealthBar->SetFillColorAndOpacity(
+				FGameConfig::GetDefault().HealthColorHigh);
 		}
-		else if(HealthPercent > UIConstants::HealthMediumThreshold)
+		else if(HealthPercent > FGameConfig::GetDefault().HealthMediumThreshold)
 		{
-			HealthBar->SetFillColorAndOpacity(UIConstants::HealthColorMedium);
+			HealthBar->SetFillColorAndOpacity(
+				FGameConfig::GetDefault().HealthColorMedium);
 		}
 		else
 		{
-			HealthBar->SetFillColorAndOpacity(UIConstants::HealthColorLow);
+			HealthBar->SetFillColorAndOpacity(
+				FGameConfig::GetDefault().HealthColorLow);
 		}
 	}
 }
@@ -108,19 +111,23 @@ void UMyPlayerUI::UpdateStaminaUI()
 		StaminaBar->SetPercent(StaminaPercent);
 
 		// Change color based on stamina level
-		if(StaminaPercent > UIConstants::StaminaHighThreshold)
+		if(StaminaPercent > FGameConfig::GetDefault().StaminaHighThreshold)
 		{
-			StaminaBar->SetFillColorAndOpacity(UIConstants::StaminaColorHigh);
+			StaminaBar->SetFillColorAndOpacity(
+				FGameConfig::GetDefault().StaminaColorHigh);
 		}
-		else if(StaminaPercent > UIConstants::StaminaMediumThreshold)
+		else if(StaminaPercent
+				> FGameConfig::GetDefault().StaminaMediumThreshold)
 		{
 			// Use a custom orange color since FLinearColor::Orange doesn't
 			// exist
-			StaminaBar->SetFillColorAndOpacity(UIConstants::StaminaColorMedium);
+			StaminaBar->SetFillColorAndOpacity(
+				FGameConfig::GetDefault().StaminaColorMedium);
 		}
 		else
 		{
-			StaminaBar->SetFillColorAndOpacity(UIConstants::StaminaColorLow);
+			StaminaBar->SetFillColorAndOpacity(
+				FGameConfig::GetDefault().StaminaColorLow);
 		}
 	}
 }

@@ -27,7 +27,7 @@ public:
 	class UBoxComponent *TriggerBox;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boss")
-	AMyBoss *BossToActivate;
+	TSoftObjectPtr<AMyBoss> BossToActivate;
 
 private:
 	bool bActivated = false;

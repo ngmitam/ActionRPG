@@ -6,10 +6,8 @@
 #include "LoadingScreenWidget.h"
 #include "PauseMenuWidget.h"
 #include "MyPlayerController.h"
-#include "MyAbilityTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
-#include "GameFramework/PlayerController.h"
 
 AMyGameMode::AMyGameMode()
 {
@@ -50,7 +48,7 @@ void AMyGameMode::BeginPlay()
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this,
 		&AMyGameMode::OnLevelLoaded,
-		DefaultValues::LoadingScreenDelay, // Loading screen delay
+		FGameConfig::GetDefault().LoadingScreenDelay, // Loading screen delay
 		false);
 }
 

@@ -93,46 +93,91 @@ A modern Action RPG built with Unreal Engine 5, showcasing advanced game develop
 
 ```
 ActionRPG/
-├── Source/                          # C++ source code
-│   ├── ActionRPG/                   # Main game module
-│   │   ├── Public/                  # Header files (.h)
-│   │   │   ├── MyCharacter.h        # Player character class
-│   │   │   ├── MyEnemy.h           # Enemy base class
-│   │   │   ├── MyBoss.h            # Boss enemy class
+├── ActionRPG.code-workspace      # VS Code workspace configuration
+├── ActionRPG.uproject            # Unreal Engine project file
+├── LICENSE                       # MIT License
+├── README.md                     # Project documentation
+├── Source/                       # C++ source code
+│   ├── ActionRPG/                # Main game module
+│   │   ├── ActionRPG.Build.cs    # Build configuration
+│   │   ├── ActionRPG.cpp         # Module implementation
+│   │   ├── ActionRPG.h           # Module header
+│   │   ├── Public/               # Header files (.h)
+│   │   │   ├── MyCharacter.h     # Player character class
+│   │   │   ├── MyEnemy.h         # Enemy base class
+│   │   │   ├── MyBoss.h          # Boss enemy class
 │   │   │   ├── MyAbilitySystemComponent.h  # GAS component
-│   │   │   └── ...                 # Other classes
-│   │   └── Private/                # Implementation files (.cpp)
-│   ├── ActionRPG.Target.cs         # Game target configuration
-│   └── ActionRPGEditor.Target.cs   # Editor target configuration
-├── Content/                        # Unreal assets
-│   ├── Maps/Arena/                 # Game levels
-│   ├── Core/                       # Core game assets
-│   │   ├── AI/                     # AI-related assets and behaviors
-│   │   │   ├── Animations/         # AI animation assets
-│   │   │   ├── Boss/               # Boss enemy assets
-│   │   │   ├── Enemy/              # Regular enemy assets
-│   │   │   └── UI/                 # AI-related UI elements
-│   │   ├── Character/              # Player character assets
-│   │   │   ├── Animations/         # Character animation assets
-│   │   │   ├── GAS/                # Gameplay Ability System assets
-│   │   │   ├── Input/              # Input mappings and actions
-│   │   │   └── UI/                 # Character-related UI elements
+│   │   │   └── ...               # Other classes
+│   │   └── Private/              # Implementation files (.cpp)
+│   ├── ActionRPG.Target.cs       # Game target configuration
+│   └── ActionRPGEditor.Target.cs # Editor target configuration
+├── Content/                      # Unreal assets
+│   ├── Maps/                     # Game levels
+│   │   └── Arena/                # Combat arena level
+│   ├── Core/                     # Core game assets
+│   │   ├── AI/                   # AI-related assets and behaviors
+│   │   │   ├── Animations/       # AI animation assets
+│   │   │   ├── Boss/             # Boss enemy assets
+│   │   │   ├── Enemy/            # Regular enemy assets
+│   │   │   └── UI/               # AI-related UI elements
+│   │   ├── Character/            # Player character assets
+│   │   │   ├── Animations/       # Character animation assets
+│   │   │   ├── GAS/              # Gameplay Ability System assets
+│   │   │   ├── Input/            # Input mappings and actions
+│   │   │   └── UI/               # Character-related UI elements
+│   │   ├── FX/                   # Particle effects and visual effects
 │   │   ├── BP_LoadingScreen.uasset # Loading screen Blueprint
-│   │   ├── BP_MyGameMode.uasset    # Game mode Blueprint
-│   │   └── BP_PauseMenu.uasset     # Pause menu Blueprint
-│   ├── KoreanTraditionalMartialArts/  # Combat animations
-│   └── FreeAnimationLibrary/       # General animations
-├── Binaries/                       # Compiled executables
-├── Plugins/                        # Unreal plugins
-├── Saved/                          # Editor and runtime data
-└── ActionRPG.uproject              # Project file
+│   │   ├── BP_MyGameMode.uasset  # Game mode Blueprint
+│   │   └── BP_PauseMenu.uasset   # Pause menu Blueprint
+│   ├── KoreanTraditionalMartialArts/ # Combat animations
+│   ├── FreeAnimationLibrary/     # General animations
+│   ├── Collections/              # Asset collections
+│   ├── Developers/               # Developer-specific assets
+│   ├── __ExternalActors__/       # External actor references
+│   └── __ExternalObjects__/      # External object references
+├── Config/                       # Configuration files
+│   ├── DefaultEditor.ini         # Editor settings
+│   ├── DefaultEngine.ini         # Engine settings
+│   ├── DefaultGame.ini           # Game settings
+│   ├── DefaultGameplayTags.ini   # Gameplay tags
+│   ├── DefaultInput.ini          # Input settings
+│   └── Layouts/                  # UI layouts
+├── Binaries/                     # Compiled executables
+│   ├── Win64/                    # Windows 64-bit builds
+├── Plugins/                      # Unreal plugins
+├── Saved/                        # Editor and runtime data
+│   ├── Autosaves/                # Auto-saved levels
+│   ├── Config/                   # Saved configuration
+│   ├── Logs/                     # Log files
+│   └── Shaders/                  # Compiled shaders
+├── DerivedDataCache/             # Cached derived data
+├── Intermediate/                 # Intermediate build files
+└── .git/                         # Git repository (not shown in project)
 ```
 
 ## 🎮 Usage
 
+### In Editor
+
 -   Open in Unreal Editor
 -   Press Play to test gameplay
 -   Use build tasks for different configurations
+
+### Packaged Game
+
+-   Navigate to `Binaries/Win64/`
+-   Run `ActionRPG.exe` for the packaged game
+
+### Controls
+
+-   **Movement**: WASD
+-   **Camera**: Mouse
+-   **Jump**: Left Ctrl
+-   **Sprint**: Left Shift
+-   **Attack**: Left Mouse Button
+-   **Dodge**: Space
+-   **Focus/Target Lock**: Right Mouse Button
+-   **Pause Menu**: Escape
 
 ## 🔨 Building
 

@@ -43,13 +43,6 @@ public:
 	// Handle enemy-specific health changes
 	void OnEnemyHealthChanged(float NewHealth);
 
-	// Simple health accessors (not using GAS)
-	UFUNCTION(BlueprintPure, Category = "Attributes")
-	float GetHealth() const { return Health; }
-
-	UFUNCTION(BlueprintPure, Category = "Attributes")
-	float GetMaxHealth() const { return MaxHealth; }
-
 	// Apply damage
 	virtual float TakeDamage(float DamageAmount,
 		struct FDamageEvent const &DamageEvent,
@@ -64,23 +57,20 @@ public:
 	// Set focused state
 	void SetFocused(bool bFocused);
 
-	// Initialize default attributes
-	void InitializeDefaultAttributes() override;
-
 	// Handle death - override from base class
 	virtual void HandleDeath() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
-	float MovementSpeed = DefaultValues::EnemyMovementSpeed;
+	UPROPERTY(BlueprintReadOnly, Category = "AI")
+	float MovementSpeed = FGameConfig::GetDefault().EnemyMovementSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
-	float AttackRange = DefaultValues::EnemyAttackRange;
+	UPROPERTY(BlueprintReadOnly, Category = "AI")
+	float AttackRange = FGameConfig::GetDefault().EnemyAttackRange;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
-	float AttackDamage = DefaultValues::EnemyAttackDamage;
+	UPROPERTY(BlueprintReadOnly, Category = "AI")
+	float AttackDamage = FGameConfig::GetDefault().EnemyAttackDamage;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
-	float AttackCooldown = DefaultValues::EnemyAttackCooldown;
+	UPROPERTY(BlueprintReadOnly, Category = "AI")
+	float AttackCooldown = FGameConfig::GetDefault().EnemyAttackCooldown;
 
 	// Patrol points for AI
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
@@ -92,12 +82,6 @@ public:
 	// Health bar widget class (set in Blueprint)
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UUserWidget> HealthBarWidgetClass;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
-	float Health = 100.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
-	float MaxHealth = 100.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimMontage *AttackMontage;
@@ -115,12 +99,12 @@ public:
 	bool bIsFocused = false;
 
 	// Stun duration when taking damage
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	float StunDuration = 2.0f;
+	UPROPERTY(BlueprintReadOnly, Category = "Animation")
+	float StunDuration = FGameConfig::GetDefault().StunDuration;
 
 	// Delay before destroying after death animation
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	float DeathDelay = 5.0f;
+	UPROPERTY(BlueprintReadOnly, Category = "Animation")
+	float DeathDelay = FGameConfig::GetDefault().DeathLifeSpan;
 
 	// Montage end callback
 	UFUNCTION()

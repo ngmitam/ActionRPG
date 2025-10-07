@@ -4,6 +4,8 @@
 
 #include "Blueprint/UserWidget.h"
 #include "CoreMinimal.h"
+#include "MyAbilityTypes.h"
+#include "MyGameConfig.h"
 #include "MyPlayerUI.generated.h"
 
 class UProgressBar;

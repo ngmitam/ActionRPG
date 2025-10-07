@@ -3,6 +3,7 @@
 #include "MyDamageEffect.h"
 
 #include "MyAbilityTypes.h"
+#include "MyGameConfig.h"
 #include "MyAttributeSet.h"
 
 UMyDamageEffect::UMyDamageEffect()
@@ -26,8 +27,8 @@ UMyDamageEffect::UMyDamageEffect()
 	FGameplayModifierInfo StunModifierInfo;
 	StunModifierInfo.Attribute = UMyAttributeSet::GetStunDurationAttribute();
 	StunModifierInfo.ModifierOp = EGameplayModOp::Override;
-	// Set stun duration to 2 seconds
-	StunModifierInfo.ModifierMagnitude =
-		FGameplayEffectModifierMagnitude(GameplayConstants::StunDuration);
+	// Set stun duration to configured value
+	StunModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(
+		FGameConfig::GetDefault().StunDuration);
 	Modifiers.Add(StunModifierInfo);
 }

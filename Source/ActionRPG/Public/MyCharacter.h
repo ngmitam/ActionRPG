@@ -7,6 +7,7 @@
 #include "MyBaseCharacter.h"
 #include "InputActionValue.h"
 #include "MyAbilityTypes.h"
+#include "MyGameConfig.h"
 #include "MyAttackAbility.h"
 #include "MyAttributeComponent.h"
 #include "MyPlayerUI.h"
@@ -16,8 +17,6 @@ class AMyEnemy;
 
 class USpringArmComponent;
 class UCameraComponent;
-class UInputMappingContext;
-class UInputAction;
 class UMyAttributeComponent;
 
 UCLASS()
@@ -55,18 +54,27 @@ public:
 		return AttributeComponent ? AttributeComponent->IsSprinting() : false;
 	}
 
-	// Public getter for dodge status, used by Animation Blueprint
+	/**
+	 * @brief Get dodge status for Animation Blueprint
+	 * @return True if character is dodging
+	 */
 	UFUNCTION(BlueprintPure, Category = "Character State")
 	bool IsDodging() const
 	{
 		return AttributeComponent ? AttributeComponent->IsDodging() : false;
 	}
 
-	// Public getter for attack status, used by Animation Blueprint
+	/**
+	 * @brief Get attack status for Animation Blueprint
+	 * @return True if character is currently attacking
+	 */
 	UFUNCTION(BlueprintPure, Category = "Character State")
 	bool IsAttacking() const;
 
-	// Get current combo index, used by Animation Blueprint
+	/**
+	 * @brief Get current combo index for Animation Blueprint
+	 * @return Current combo index in attack sequence, 0 if not attacking
+	 */
 	UFUNCTION(BlueprintPure, Category = "Character State")
 	int32 GetCurrentComboIndex() const;
 
@@ -113,14 +121,51 @@ protected:
 
 	// INPUT HANDLERS - Now called by PlayerController
 public:
+	/**
+	 * @brief Handle movement input
+	 * @param Value Input action value containing movement vector
+	 */
 	void Move(const FInputActionValue &Value);
+
+	/**
+	 * @brief Handle look/camera input
+	 * @param Value Input action value containing look axis
+	 */
 	void Look(const FInputActionValue &Value);
+
+	/**
+	 * @brief Start sprinting ability
+	 */
 	void StartSprint();
+
+	/**
+	 * @brief Stop sprinting ability
+	 */
 	void StopSprint();
+
+	/**
+	 * @brief Perform jump action
+	 */
 	void Jump();
+
+	/**
+	 * @brief Stop jumping ability
+	 */
 	void StopJumping();
+
+	/**
+	 * @brief Perform dodge ability
+	 */
 	void Dodge();
+
+	/**
+	 * @brief Perform attack action
+	 */
 	void Attack();
+
+	/**
+	 * @brief Cycle focus to next enemy target
+	 */
 	void FocusEnemy();
 
 	// Player UI Class
@@ -132,23 +177,44 @@ public:
 	UMyPlayerUI *PlayerUIWidget;
 
 	// Dodge cooldown time
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dodge")
-	float DodgeCooldown = DefaultValues::DodgeCooldown;
+	UPROPERTY(BlueprintReadOnly, Category = "Dodge")
+	float DodgeCooldown = FGameConfig::GetDefault().DodgeCooldown;
 
 private:
-	// Initialize the attribute component
+	/**
+	 * @brief Initialize the attribute component
+	 */
 	void InitializeAttributeComponent();
 
-	// Create and setup the player UI
+	/**
+	 * @brief Create and setup the player UI
+	 */
 	void InitializePlayerUI();
 
-	// Helper to get the active attack ability
+	/**
+	 * @brief Helper to get the active attack ability
+	 * @return Pointer to active attack ability, nullptr if none
+	 */
 	UMyAttackAbility *GetActiveAttackAbility() const;
 
-	// Dodge reset helper
+	/**
+	 * @brief Check if character can perform abilities (not attacking and
+	 * ability system ready)
+	 * @return True if character can perform abilities
+	 */
+	bool CanPerformAbility() const
+	{
+		return !IsAttacking() && IsAbilitySystemReady();
+	}
+
+	/**
+	 * @brief Dodge reset helper - called by timer
+	 */
 	void ResetDodgeStatus();
 
-	// Level reset helper
+	/**
+	 * @brief Level reset helper - called by timer after death
+	 */
 	void ResetLevel();
 
 	// Enemy targeting
@@ -158,20 +224,44 @@ private:
 	bool bCameraLocked;
 	FTimerHandle UpdateEnemiesTimerHandle;
 
+	/**
+	 * @brief Update the list of nearby enemies and their UI state
+	 */
 	void UpdateNearbyEnemies();
-	void FindNearbyEnemies();
-	void SortEnemiesByDistance();
-	void UpdateHealthBarVisibility();
-	void ValidateCurrentTarget();
-	void CycleTarget();
 
-	// Helper methods for target cycling
-	void HandleNoNearbyEnemies(AMyEnemy *OldTarget);
-	TArray<AMyEnemy *> CreateTargetList() const;
-	int32 FindCurrentTargetIndex(const TArray<AMyEnemy *> &AllTargets) const;
-	AMyEnemy *GetNextTarget(
-		const TArray<AMyEnemy *> &AllTargets, int32 CurrentIndex) const;
-	void UpdateCameraLock(AMyEnemy *NewTarget);
-	void UpdateTargetVisibilityAndFocus(
-		AMyEnemy *OldTarget, AMyEnemy *NewTarget);
+	/**
+	 * @brief Find all enemies within detection range
+	 */
+	void FindNearbyEnemies();
+
+	/**
+	 * @brief Sort nearby enemies by distance from character
+	 */
+	void SortEnemiesByDistance();
+
+	/**
+	 * @brief Update health bar visibility for nearby enemies
+	 */
+	void UpdateHealthBarVisibility();
+
+	/**
+	 * @brief Validate current target and cycle if invalid
+	 */
+	void ValidateCurrentTarget();
+
+	/**
+	 * @brief Set the current target enemy with proper state management
+	 * @param NewTarget The enemy to target, nullptr to clear target
+	 */
+	void SetTarget(AMyEnemy *NewTarget);
+
+	/**
+	 * @brief Clear the current target enemy
+	 */
+	void ClearTarget();
+
+	/**
+	 * @brief Cycle to the next enemy target
+	 */
+	void CycleTarget();
 };

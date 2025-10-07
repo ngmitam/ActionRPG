@@ -54,7 +54,7 @@ EBTNodeResult::Type UBTTask_AttackPlayer::ExecuteTask(
 	// Check distance
 	float Distance = FVector::Dist(
 		Enemy->GetActorLocation(), PlayerCharacter->GetActorLocation());
-	if(Distance <= AttackRange + 50.0f)
+	if(Distance <= AttackRange + FGameConfig::GetDefault().AttackRangeTolerance)
 	{
 		// Check if not already attacking
 		if(!Enemy->bIsAttacking)

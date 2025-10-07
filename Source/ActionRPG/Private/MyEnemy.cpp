@@ -7,11 +7,8 @@
 #include "Components/ProgressBar.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameplayEffect.h"
-#include "Kismet/GameplayStatics.h"
 #include "MyAttributeComponent.h"
 #include "MyCharacter.h"
-#include "MyDamageEffect.h"
 #include "MyEnemyAIController.h"
 
 AMyEnemy::AMyEnemy()
@@ -24,8 +21,9 @@ AMyEnemy::AMyEnemy()
 	// Simple movement
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate =
-		FRotator(0.0f, DefaultValues::EnemyRotationRate, 0.0f);
-	GetCharacterMovement()->MaxWalkSpeed = DefaultValues::EnemyMovementSpeed;
+		FRotator(0.0f, FGameConfig::GetDefault().EnemyRotationRate, 0.0f);
+	GetCharacterMovement()->MaxWalkSpeed =
+		FGameConfig::GetDefault().EnemyMovementSpeed;
 
 	// Create health bar widget component
 	HealthBarWidget = CreateDefaultSubobject<UWidgetComponent>(
@@ -33,10 +31,11 @@ AMyEnemy::AMyEnemy()
 	HealthBarWidget->SetupAttachment(GetRootComponent());
 	HealthBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
 	HealthBarWidget->SetDrawSize(
-		FVector2D(UIConstants::HealthBarWidth, UIConstants::HealthBarHeight));
-	HealthBarWidget->SetRelativeLocation(
-		FVector(0.0f, 0.0f, UIConstants::HealthBarZOffset)); // Above the enemy
-	HealthBarWidget->SetVisibility(false); // Hidden by default
+		FVector2D(FGameConfig::GetDefault().HealthBarWidth,
+			FGameConfig::GetDefault().HealthBarHeight));
+	HealthBarWidget->SetRelativeLocation(FVector(0.0f, 0.0f,
+		FGameConfig::GetDefault().HealthBarZOffset)); // Above the enemy
+	HealthBarWidget->SetVisibility(false);			  // Hidden by default
 
 	// AttributeComponent is now created in base class
 }
@@ -47,6 +46,13 @@ void AMyEnemy::BeginPlay()
 
 	// AI Controller is now automatically spawned by the engine
 	// No need to manually spawn it
+
+	// Bind to health change delegate for enemy-specific logic
+	if(AttributeComponent)
+	{
+		AttributeComponent->GetOnHealthChanged().AddUObject(
+			this, &AMyEnemy::OnEnemyHealthChanged);
+	}
 
 	// Initialize the health bar widget
 	InitializeHealthBar();
@@ -77,11 +83,11 @@ void AMyEnemy::MoveTowardsPlayer(float DeltaTime)
 {
 	FVector Direction =
 		PlayerCharacter->GetActorLocation() - GetActorLocation();
-	Direction.Z = GameplayConstants::GroundZCoordinate; // Keep on ground
+	Direction.Z = FGameConfig::GetDefault().GroundZCoordinate; // Keep on ground
 	Direction.Normalize();
 
 	// Simple move towards player
-	AddMovementInput(Direction, GameplayConstants::DefaultMovementInput);
+	AddMovementInput(Direction, FGameConfig::GetDefault().DefaultMovementInput);
 }
 
 void AMyEnemy::AttackPlayer(ACharacter *Player)
@@ -103,7 +109,8 @@ void AMyEnemy::AttackPlayer(ACharacter *Player)
 
 		// Face the player before attacking
 		FVector Direction = Player->GetActorLocation() - GetActorLocation();
-		Direction.Z = GameplayConstants::GroundZCoordinate; // Keep on ground
+		Direction.Z =
+			FGameConfig::GetDefault().GroundZCoordinate; // Keep on ground
 		if(!Direction.IsNearlyZero())
 		{
 			FRotator NewRotation = Direction.Rotation();
@@ -120,7 +127,7 @@ void AMyEnemy::AttackPlayer(ACharacter *Player)
 				if(AnimInstance)
 				{
 					AnimInstance->Montage_Stop(
-						GameplayConstants::GroundZCoordinate);
+						FGameConfig::GetDefault().GroundZCoordinate);
 					// Clear previous binding to avoid multiple calls
 					AnimInstance->OnMontageEnded.RemoveDynamic(
 						this, &AMyEnemy::OnAttackMontageEnded);
@@ -177,11 +184,14 @@ void AMyEnemy::OnEnemyHealthChanged(float NewHealth)
 float AMyEnemy::TakeDamage(float DamageAmount, const FDamageEvent &DamageEvent,
 	AController *EventInstigator, AActor *DamageCauser)
 {
-	// Apply damage to simple health
-	Health = FMath::Max(0.0f, Health - DamageAmount);
+	float ActualDamage = Super::TakeDamage(
+		DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	// Update health bar after damage is applied through GAS
 	UpdateHealthBar();
 
-	if(Health <= 0.0f)
+	// Check if dead using GAS health
+	if(AttributeComponent && AttributeComponent->GetHealth() <= 0.0f)
 	{
 		// Death clears stun
 		SetStunned(false);
@@ -197,7 +207,7 @@ float AMyEnemy::TakeDamage(float DamageAmount, const FDamageEvent &DamageEvent,
 			StunTimer, [this]() { SetStunned(false); }, StunDuration, false);
 	}
 
-	return DamageAmount;
+	return ActualDamage;
 }
 
 void AMyEnemy::SetStunned(bool bStunned)
@@ -230,10 +240,6 @@ void AMyEnemy::SetFocused(bool bFocused)
 	}
 }
 
-void AMyEnemy::InitializeDefaultAttributes()
-{
-	// Enemy uses simple health, no GAS needed
-}
 void AMyEnemy::UpdateHealthBar()
 {
 	if(!HealthBarWidget)
@@ -249,7 +255,13 @@ void AMyEnemy::UpdateHealthBar()
 		return;
 	}
 
-	float HealthPercent = (MaxHealth > 0.0f) ? (Health / MaxHealth) : 0.0f;
+	// Use GAS attributes for health
+	float CurrentHealth =
+		AttributeComponent ? AttributeComponent->GetHealth() : 0.0f;
+	float MaxHealthValue =
+		AttributeComponent ? AttributeComponent->GetMaxHealth() : 1.0f;
+	float HealthPercent =
+		(MaxHealthValue > 0.0f) ? (CurrentHealth / MaxHealthValue) : 0.0f;
 
 	HealthProgressBar->SetPercent(HealthPercent);
 

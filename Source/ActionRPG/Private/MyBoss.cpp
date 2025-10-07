@@ -17,11 +17,6 @@ AMyBoss::AMyBoss()
 	SpearMesh->SetupAttachment(
 		GetMesh(), TEXT("hand_r")); // Attach to right hand socket
 
-	// Boss has higher health
-	MaxHealth = 300.0f;
-	Health = 300.0f;
-	AttackDamage = 15.0f;
-
 	// Boss is 1.3 times larger
 	GetMesh()->SetRelativeScale3D(FVector(1.3f, 1.3f, 1.3f));
 
@@ -57,7 +52,6 @@ void AMyBoss::PerformBossAttack(ACharacter *Player)
 
 	// Select random attack type
 	EBossAttackType AttackType = SelectRandomAttack();
-	CurrentAttackType = AttackType;
 
 	// Play the attack
 	if(PlayAttack(AttackType))
@@ -74,7 +68,6 @@ void AMyBoss::ResetAttackState()
 {
 	bIsAttacking = false;
 	bIsInCombo = false;
-	CurrentAttackType = EBossAttackType::Attack1;
 
 	// Clear the fallback timer
 	GetWorld()->GetTimerManager().ClearTimer(AttackResetTimerHandle);
@@ -117,11 +110,11 @@ float AMyBoss::TakeDamage(float DamageAmount,
 	float ActualDamage = Super::TakeDamage(
 		DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
-	// Apply damage to simple health
-	Health = FMath::Max(0.0f, Health - ActualDamage);
+	// Update health bar after damage is applied through GAS
 	UpdateHealthBar();
 
-	if(Health <= 0.0f)
+	// Check if dead using GAS health
+	if(AttributeComponent && AttributeComponent->GetHealth() <= 0.0f)
 	{
 		// Death clears stun
 		SetStunned(false);
@@ -145,15 +138,6 @@ float AMyBoss::TakeDamage(float DamageAmount,
 	}
 
 	return ActualDamage;
-}
-
-void AMyBoss::OnAttackNotify()
-{
-	// Apply damage to target player
-	if(TargetPlayer)
-	{
-		ApplyDamageToPlayer(TargetPlayer);
-	}
 }
 
 void AMyBoss::OnAttackMontageEnded(UAnimMontage *Montage, bool bInterrupted)
@@ -225,16 +209,6 @@ bool AMyBoss::PlayAttack(EBossAttackType AttackType)
 		}
 	}
 	return false;
-}
-
-void AMyBoss::ApplyDamageToPlayer(ACharacter *Player)
-{
-	if(!Player)
-		return;
-
-	// Apply damage using GameplayStatics, which will call TakeDamage on the
-	// player
-	UGameplayStatics::ApplyDamage(Player, AttackDamage, nullptr, this, nullptr);
 }
 
 bool AMyBoss::CanBeStunned() const

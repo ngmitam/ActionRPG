@@ -8,6 +8,7 @@
 #include "GameplayEffectTypes.h"
 #include "MyAbilitySystemComponent.h"
 #include "MyAbilityTypes.h"
+#include "MyGameConfig.h"
 #include "MyAttributeSet.h"
 #include "MyGameplayAbility.h"
 #include "MyAttributeComponent.generated.h"
@@ -44,6 +45,12 @@ public:
 	void InitializeAbilitySystem();
 	void DeferredInitialize();
 
+	// Initialize attribute component (called by owner)
+	void InitializeAttributeComponent();
+
+	// Initialize default attributes with config values
+	void InitializeDefaultAttributes();
+
 	// Helper methods for initialization
 	bool IsReadyForInitialization() const;
 	void ScheduleRetryInitialization();
@@ -63,9 +70,6 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Attributes")
 	float GetMaxStamina() const;
-
-	UFUNCTION(BlueprintPure, Category = "Attributes")
-	float GetMaxWalkSpeed() const;
 
 	UFUNCTION(BlueprintPure, Category = "Attributes")
 	float GetStunDuration() const;
@@ -97,6 +101,12 @@ public:
 	// Get the attribute set
 	UMyAttributeSet *GetAttributeSet() const { return AttributeSet; }
 
+	// Get the game config
+	const FGameConfig &GetGameConfig() const
+	{
+		return FGameConfig::GetDefault();
+	}
+
 	// Check if the ability system is fully initialized and valid
 	bool IsAbilitySystemValid() const
 	{
@@ -109,14 +119,33 @@ public:
 	bool HasValidOwner() const { return GetOwner() != nullptr; }
 	bool IsAttributeInitialized(const FGameplayAttribute &Attribute) const;
 
-	// Set default attribute values
-	void SetDefaultAttributes(float Health = 100.0f, float MaxHealth = 100.0f,
-		float Stamina = 100.0f, float MaxStamina = 100.0f);
-
 	// Set default attribute values using struct
 	void SetDefaultAttributes(const FDefaultAttributes &Attributes);
 
-	float GetDefaultMaxWalkSpeed() const { return DefaultMaxWalkSpeed; }
+	float GetDefaultMaxWalkSpeed() const
+	{
+		return FGameConfig::GetDefault().DefaultMaxWalkSpeed;
+	}
+
+	// Get default attributes - can be overridden by subclasses for custom
+	// values
+	virtual FDefaultAttributes GetDefaultAttributes() const;
+
+	// Individual attribute values (initialized with FGameConfig defaults)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes")
+	float Health = FGameConfig::GetDefault().DefaultHealth;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes")
+	float MaxHealth = FGameConfig::GetDefault().DefaultMaxHealth;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes")
+	float Stamina = FGameConfig::GetDefault().DefaultStamina;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes")
+	float MaxStamina = FGameConfig::GetDefault().DefaultMaxStamina;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes")
+	float MaxWalkSpeed = FGameConfig::GetDefault().DefaultMaxWalkSpeed;
 
 protected:
 	// Ability System Component
@@ -136,27 +165,6 @@ protected:
 	// Default ability classes
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Abilities")
 	TArray<TSubclassOf<UMyGameplayAbility>> DefaultAbilityClasses;
-
-	// Default attribute values
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes",
-		meta = (ClampMin = "0.0"))
-	float DefaultHealth = 100.0f;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes",
-		meta = (ClampMin = "0.0"))
-	float DefaultMaxHealth = 100.0f;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes",
-		meta = (ClampMin = "0.0"))
-	float DefaultStamina = 100.0f;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes",
-		meta = (ClampMin = "0.0"))
-	float DefaultMaxStamina = 100.0f;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attributes",
-		meta = (ClampMin = "0.0"))
-	float DefaultMaxWalkSpeed = 300.0f;
 
 	// Handle attribute changes
 	virtual void OnAttributeChange(const FOnAttributeChangeData &Data);

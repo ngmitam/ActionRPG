@@ -34,12 +34,18 @@ void ABossAreaTrigger::OnOverlapBegin(UPrimitiveComponent *OverlappedComp,
 	if(bActivated)
 		return;
 
+	if(!OtherActor || OtherActor->HasAnyFlags(RF_ClassDefaultObject))
+		return;
+
 	AMyCharacter *Player = Cast<AMyCharacter>(OtherActor);
-	if(Player && BossToActivate)
+	if(Player && BossToActivate.IsValid() && BossToActivate.Get()
+		&& BossToActivate.Get()->IsValidLowLevel()
+		&& !BossToActivate.Get()->IsTemplate()
+		&& !BossToActivate.Get()->HasAnyFlags(RF_ClassDefaultObject))
 	{
 		// Activate boss
-		BossToActivate->SetActorHiddenInGame(false);
-		BossToActivate->SetActorEnableCollision(true);
+		BossToActivate.Get()->SetActorHiddenInGame(false);
+		BossToActivate.Get()->SetActorEnableCollision(true);
 
 		// Optional: Play activation animation or sound
 		// BossToActivate->PlayActivationSequence();

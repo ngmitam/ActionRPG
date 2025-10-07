@@ -174,11 +174,9 @@ void UMyAttackAbility::ApplyDamageEffect()
 				new FGameplayAbilityTargetData_SingleTargetHit();
 			TargetData->HitResult = FHitResult(
 				Target, nullptr, FVector::ZeroVector, FVector::ZeroVector);
-			FGameplayAbilityTargetDataHandle TargetDataHandle(TargetData);
-
 			// Apply to target
 			ApplyGameplayEffectSpecToTarget(Handle, ActorInfo, ActivationInfo,
-				DamageSpecHandle, TargetDataHandle);
+				DamageSpecHandle, TargetData);
 		}
 	}
 	else

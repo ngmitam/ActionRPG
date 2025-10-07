@@ -34,7 +34,10 @@ void AMyBaseCharacter::BeginPlay()
 	}
 
 	// Initialize attribute component
-	InitializeAttributeComponent();
+	if(AttributeComponent)
+	{
+		AttributeComponent->InitializeAttributeComponent();
+	}
 }
 
 void AMyBaseCharacter::Tick(float DeltaTime)
@@ -98,63 +101,5 @@ void AMyBaseCharacter::OnHealthChanged(float NewHealth)
 	if(NewHealth <= 0.0f && !bIsDead)
 	{
 		HandleDeath();
-	}
-}
-
-void AMyBaseCharacter::InitializeDefaultAttributes()
-{
-	if(!IsAttributeSystemValid())
-	{
-		// Try again next frame if not ready
-		GetWorld()->GetTimerManager().SetTimerForNextTick(
-			this, &AMyBaseCharacter::InitializeDefaultAttributes);
-		return;
-	}
-
-	// Only initialize if not already done
-	if(bAttributesInitialized)
-	{
-		return;
-	}
-
-	// Bind to health change delegate
-	AttributeComponent->GetOnHealthChanged().AddUObject(
-		this, &AMyBaseCharacter::OnHealthChanged);
-
-	// Set default attributes using struct
-	FDefaultAttributes DefaultAttrs;
-
-	// Use blueprint-set values if they differ from class defaults, otherwise
-	// use defaults
-	DefaultAttrs.Health = (DefaultHealth != DefaultValues::DefaultHealth)
-							  ? DefaultHealth
-							  : DefaultValues::DefaultHealth;
-	DefaultAttrs.MaxHealth =
-		(DefaultMaxHealth != DefaultValues::DefaultMaxHealth)
-			? DefaultMaxHealth
-			: DefaultValues::DefaultMaxHealth;
-	DefaultAttrs.Stamina = (DefaultStamina != DefaultValues::DefaultStamina)
-							   ? DefaultStamina
-							   : DefaultValues::DefaultStamina;
-	DefaultAttrs.MaxStamina =
-		(DefaultMaxStamina != DefaultValues::DefaultMaxStamina)
-			? DefaultMaxStamina
-			: DefaultValues::DefaultMaxStamina;
-	DefaultAttrs.MaxWalkSpeed = AttributeComponent->GetDefaultMaxWalkSpeed();
-
-	AttributeComponent->SetDefaultAttributes(DefaultAttrs);
-
-	// Mark as initialized
-	bAttributesInitialized = true;
-}
-
-void AMyBaseCharacter::InitializeAttributeComponent()
-{
-	// Initialize attribute component if it exists
-	if(AttributeComponent)
-	{
-		// Defer initialization to ensure proper timing
-		GetWorld()->GetTimerManager().SetTimerForNextTick(
-			this, &AMyBaseCharacter::InitializeDefaultAttributes);
 	}
 }

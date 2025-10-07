@@ -5,8 +5,6 @@
 #include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "MyAbilityTypes.h"
@@ -25,24 +23,28 @@ AMyCharacter::AMyCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
 	GetCharacterMovement()->RotationRate =
-		FRotator(0.0f, DefaultValues::CharacterRotationRate, 0.0f);
+		FRotator(0.0f, FGameConfig::GetDefault().CharacterRotationRate, 0.0f);
 
 	// Spring Arm Component
 	SpringArmComponent =
 		CreateDefaultSubobject<USpringArmComponent>(ComponentNames::SpringArm);
 	SpringArmComponent->SetupAttachment(RootComponent);
-	SpringArmComponent->TargetArmLength = DefaultValues::SpringArmLength;
+	SpringArmComponent->TargetArmLength =
+		FGameConfig::GetDefault().SpringArmLength;
 	SpringArmComponent->bUsePawnControlRotation = true;
 
-	SpringArmComponent->SocketOffset = FVector(
-		DefaultValues::CameraSocketOffsetX, DefaultValues::CameraSocketOffsetY,
-		DefaultValues::CameraSocketOffsetZ);
+	SpringArmComponent->SocketOffset =
+		FVector(FGameConfig::GetDefault().CameraSocketOffsetX,
+			FGameConfig::GetDefault().CameraSocketOffsetY,
+			FGameConfig::GetDefault().CameraSocketOffsetZ);
 
 	SpringArmComponent->bEnableCameraLag = true;
-	SpringArmComponent->CameraLagSpeed = DefaultValues::CameraLagSpeed;
+	SpringArmComponent->CameraLagSpeed =
+		FGameConfig::GetDefault().CameraLagSpeed;
 
 	SpringArmComponent->bEnableCameraRotationLag = true;
-	SpringArmComponent->CameraRotationLagSpeed = DefaultValues::CameraLagSpeed;
+	SpringArmComponent->CameraRotationLagSpeed =
+		FGameConfig::GetDefault().CameraLagSpeed;
 
 	// Camera Component
 	CameraComponent =
@@ -72,8 +74,8 @@ void AMyCharacter::BeginPlay()
 	// Start updating nearby enemies
 	UpdateNearbyEnemies(); // Initial update
 	GetWorld()->GetTimerManager().SetTimer(UpdateEnemiesTimerHandle, this,
-		&AMyCharacter::UpdateNearbyEnemies, DefaultValues::EnemyUpdateInterval,
-		true);
+		&AMyCharacter::UpdateNearbyEnemies,
+		FGameConfig::GetDefault().EnemyUpdateInterval, true);
 }
 
 void AMyCharacter::InitializePlayerUI()
@@ -154,7 +156,7 @@ void AMyCharacter::Look(const FInputActionValue &Value)
 
 void AMyCharacter::StartSprint()
 {
-	if(IsAttacking())
+	if(!CanPerformAbility())
 		return;
 
 	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
@@ -170,7 +172,7 @@ void AMyCharacter::StartSprint()
 
 void AMyCharacter::StopSprint()
 {
-	if(IsAttacking())
+	if(!CanPerformAbility())
 		return;
 
 	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
@@ -188,7 +190,7 @@ void AMyCharacter::StopSprint()
 
 void AMyCharacter::Jump()
 {
-	if(IsAttacking())
+	if(!CanPerformAbility())
 		return;
 
 	Super::Jump();
@@ -204,7 +206,7 @@ void AMyCharacter::Jump()
 
 void AMyCharacter::StopJumping()
 {
-	if(IsAttacking())
+	if(!CanPerformAbility())
 		return;
 
 	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
@@ -221,11 +223,7 @@ void AMyCharacter::StopJumping()
 
 void AMyCharacter::Dodge()
 {
-	if(IsAttacking())
-		return;
-
-	// Trigger ability system
-	if(!IsAbilitySystemReady() || AttributeComponent->IsDodging())
+	if(!CanPerformAbility() || AttributeComponent->IsDodging())
 	{
 		return;
 	}
@@ -238,7 +236,8 @@ void AMyCharacter::Dodge()
 	// Reset dodge status after cooldown
 	FTimerHandle UnusedHandle;
 	GetWorld()->GetTimerManager().SetTimer(UnusedHandle, this,
-		&AMyCharacter::ResetDodgeStatus, DefaultValues::DodgeCooldown, false);
+		&AMyCharacter::ResetDodgeStatus,
+		FGameConfig::GetDefault().DodgeCooldown, false);
 }
 
 void AMyCharacter::ResetDodgeStatus()
@@ -306,7 +305,8 @@ void AMyCharacter::HandleDeath()
 	// Reset the level after a delay
 	FTimerHandle ResetTimer;
 	GetWorld()->GetTimerManager().SetTimer(ResetTimer, this,
-		&AMyCharacter::ResetLevel, DefaultValues::DeathResetDelay, false);
+		&AMyCharacter::ResetLevel, FGameConfig::GetDefault().DeathResetDelay,
+		false);
 }
 
 void AMyCharacter::ResetLevel()
@@ -381,13 +381,16 @@ void AMyCharacter::FindNearbyEnemies()
 	UGameplayStatics::GetAllActorsOfClass(
 		GetWorld(), AMyEnemy::StaticClass(), AllEnemies);
 
+	const float DetectionRange = FGameConfig::GetDefault().EnemyDetectionRange;
+	const FVector PlayerLocation = GetActorLocation();
+
 	for(AActor *Actor : AllEnemies)
 	{
 		if(AMyEnemy *Enemy = Cast<AMyEnemy>(Actor))
 		{
-			float Distance =
-				FVector::Dist(GetActorLocation(), Enemy->GetActorLocation());
-			if(Distance <= DefaultValues::EnemyDetectionRange)
+			const float Distance =
+				FVector::Dist(PlayerLocation, Enemy->GetActorLocation());
+			if(Distance <= DetectionRange)
 			{
 				NearbyEnemies.Add(Enemy);
 			}
@@ -397,13 +400,15 @@ void AMyCharacter::FindNearbyEnemies()
 
 void AMyCharacter::SortEnemiesByDistance()
 {
+	const FVector PlayerLocation = GetActorLocation();
+
 	NearbyEnemies.Sort(
-		[this](const AMyEnemy &A, const AMyEnemy &B)
+		[PlayerLocation](const AMyEnemy &A, const AMyEnemy &B)
 		{
-			float DistA =
-				FVector::DistSquared(GetActorLocation(), A.GetActorLocation());
-			float DistB =
-				FVector::DistSquared(GetActorLocation(), B.GetActorLocation());
+			const float DistA =
+				FVector::DistSquared(PlayerLocation, A.GetActorLocation());
+			const float DistB =
+				FVector::DistSquared(PlayerLocation, B.GetActorLocation());
 			return DistA < DistB;
 		});
 }
@@ -434,104 +439,95 @@ void AMyCharacter::ValidateCurrentTarget()
 	if(CurrentTarget
 		&& (!NearbyEnemies.Contains(CurrentTarget) || CurrentTarget->bIsDead))
 	{
-		CycleTarget();
+		ClearTarget();
+
+		// Focus new nearest enemy if available
+		if(NearbyEnemies.Num() > 0)
+		{
+			SetTarget(NearbyEnemies[0]);
+		}
 	}
 }
+
+void AMyCharacter::SetTarget(AMyEnemy *NewTarget)
+{
+	if(CurrentTarget == NewTarget)
+	{
+		return;
+	}
+
+	// Clear current target if different
+	if(CurrentTarget)
+	{
+		ClearTarget();
+	}
+
+	// Set new target
+	CurrentTarget = NewTarget;
+	if(CurrentTarget)
+	{
+		bCameraLocked = true;
+		CurrentTarget->SetFocused(true);
+		CurrentTarget->SetHealthBarVisible(true);
+	}
+	else
+	{
+		bCameraLocked = false;
+	}
+}
+
+void AMyCharacter::ClearTarget()
+{
+	if(CurrentTarget)
+	{
+		AMyEnemy *OldTarget = CurrentTarget;
+		CurrentTarget = nullptr;
+		bCameraLocked = false;
+
+		OldTarget->SetFocused(false);
+		if(!NearbyEnemies.Contains(OldTarget))
+		{
+			OldTarget->SetHealthBarVisible(false);
+		}
+	}
+}
+
 void AMyCharacter::FocusEnemy()
 {
-	CycleTarget();
+	if(CurrentTarget)
+	{
+		ClearTarget();
+	}
+	else
+	{
+		// Focus nearest enemy
+		if(NearbyEnemies.Num() > 0)
+		{
+			SetTarget(NearbyEnemies[0]);
+		}
+	}
 }
 
 void AMyCharacter::CycleTarget()
 {
-	AMyEnemy *OldTarget = CurrentTarget;
+	// If no nearby enemies, clear target
 	if(NearbyEnemies.Num() == 0)
 	{
-		HandleNoNearbyEnemies(OldTarget);
+		ClearTarget();
 		return;
 	}
 
-	// Create list of all possible targets including no target
-	TArray<AMyEnemy *> AllTargets = CreateTargetList();
-
-	int32 CurrentIndex = FindCurrentTargetIndex(AllTargets);
-	AMyEnemy *NewTarget = GetNextTarget(AllTargets, CurrentIndex);
-
-	CurrentTarget = NewTarget;
-
-	UpdateCameraLock(NewTarget);
-	UpdateTargetVisibilityAndFocus(OldTarget, NewTarget);
-}
-
-void AMyCharacter::HandleNoNearbyEnemies(AMyEnemy *OldTarget)
-{
-	CurrentTarget = nullptr;
-	bCameraLocked = false;
-	if(OldTarget)
-	{
-		if(!NearbyEnemies.Contains(OldTarget))
-		{
-			OldTarget->SetHealthBarVisible(false);
-			OldTarget->SetFocused(false);
-		}
-	}
-}
-
-TArray<AMyEnemy *> AMyCharacter::CreateTargetList() const
-{
-	TArray<AMyEnemy *> AllTargets;
-	AllTargets.Add(nullptr); // No target option
-	for(AMyEnemy *Enemy : NearbyEnemies)
-	{
-		AllTargets.Add(Enemy);
-	}
-	return AllTargets;
-}
-
-int32 AMyCharacter::FindCurrentTargetIndex(
-	const TArray<AMyEnemy *> &AllTargets) const
-{
-	int32 CurrentIndex = AllTargets.Find(CurrentTarget);
+	// Find current target index in nearby enemies
+	int32 CurrentIndex = NearbyEnemies.Find(CurrentTarget);
 	if(CurrentIndex == INDEX_NONE)
 	{
-		return 0; // Default to first target (no target)
-	}
-	return CurrentIndex;
-}
-
-AMyEnemy *AMyCharacter::GetNextTarget(
-	const TArray<AMyEnemy *> &AllTargets, int32 CurrentIndex) const
-{
-	int32 NextIndex = (CurrentIndex + 1) % AllTargets.Num();
-	return AllTargets[NextIndex];
-}
-
-void AMyCharacter::UpdateCameraLock(AMyEnemy *NewTarget)
-{
-	bCameraLocked = (NewTarget != nullptr);
-}
-
-void AMyCharacter::UpdateTargetVisibilityAndFocus(
-	AMyEnemy *OldTarget, AMyEnemy *NewTarget)
-{
-	// Update old target
-	if(OldTarget && OldTarget != NewTarget)
-	{
-		if(!NearbyEnemies.Contains(OldTarget))
-		{
-			OldTarget->SetHealthBarVisible(false);
-			OldTarget->SetFocused(false);
-		}
-		else
-		{
-			OldTarget->SetFocused(false);
-		}
+		// Current target not in nearby enemies, start with first enemy
+		CurrentIndex = 0;
 	}
 
-	// Update new target
-	if(NewTarget)
-	{
-		NewTarget->SetHealthBarVisible(true);
-		NewTarget->SetFocused(true);
-	}
+	// Cycle to next enemy
+	const int32 NextIndex = (CurrentIndex + 1) % NearbyEnemies.Num();
+	AMyEnemy *NewTarget = NearbyEnemies[NextIndex];
+
+	SetTarget(NewTarget);
 }

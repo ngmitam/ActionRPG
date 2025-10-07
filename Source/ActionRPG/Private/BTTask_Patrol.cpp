@@ -60,7 +60,8 @@ void UBTTask_Patrol::TickTask(
 		Enemy->PatrolPoints[CurrentPatrolIndex]->GetActorLocation();
 	float Distance = FVector::Dist(CurrentLocation, TargetLocation);
 
-	if(Distance < 100.0f) // Close enough
+	if(Distance
+		< FGameConfig::GetDefault().PatrolPointTolerance) // Close enough
 	{
 		// Move to next point
 		CurrentPatrolIndex =

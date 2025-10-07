@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MyAbilityTypes.h"
+#include "MyGameConfig.h"
 #include "GameFramework/GameMode.h"
 #include "MyGameMode.generated.h"
 
