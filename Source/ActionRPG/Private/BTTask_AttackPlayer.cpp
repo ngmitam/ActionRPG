@@ -22,7 +22,7 @@ EBTNodeResult::Type UBTTask_AttackPlayer::ExecuteTask(
 	}
 
 	AMyEnemy *Enemy = Cast<AMyEnemy>(AIController->GetPawn());
-	if(!Enemy)
+	if(!Enemy || !Enemy->IsActivated())
 	{
 		return EBTNodeResult::Failed;
 	}

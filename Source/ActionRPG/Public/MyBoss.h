@@ -54,6 +54,13 @@ public:
 	// Check if boss can be stunned
 	bool CanBeStunned() const;
 
+	// Check if boss is activated
+	virtual bool IsActivated() const override { return bActivated; }
+
+	// Activation state
+	UPROPERTY(BlueprintReadWrite, Category = "Boss")
+	bool bActivated = false;
+
 	// Spear mesh for boss
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
 	UStaticMeshComponent *SpearMesh;

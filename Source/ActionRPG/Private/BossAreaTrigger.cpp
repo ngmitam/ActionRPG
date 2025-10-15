@@ -46,6 +46,7 @@ void ABossAreaTrigger::OnOverlapBegin(UPrimitiveComponent *OverlappedComp,
 		// Activate boss
 		BossToActivate.Get()->SetActorHiddenInGame(false);
 		BossToActivate.Get()->SetActorEnableCollision(true);
+		BossToActivate.Get()->bActivated = true;
 
 		// Optional: Play activation animation or sound
 		// BossToActivate->PlayActivationSequence();

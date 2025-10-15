@@ -70,6 +70,7 @@ A modern Action RPG built with Unreal Engine 5, showcasing advanced game develop
 -   **Required Assets**:
     -   KoreanTraditionalMartialArts
     -   FreeAnimationLibrary
+    -   UndergroundSciFi
 
 ## 📦 Installation
 
@@ -83,7 +84,7 @@ A modern Action RPG built with Unreal Engine 5, showcasing advanced game develop
 2. **Install Asset Packs**
 
     - Open Epic Games Launcher → Marketplace
-    - Acquire and add to project: `KoreanTraditionalMartialArts` & `FreeAnimationLibrary`
+    - Acquire and add to project: `KoreanTraditionalMartialArts`, `FreeAnimationLibrary`, & `UndergroundSciFi`
 
 3. **Open Project**
     - Launch `ActionRPG.uproject` in Unreal Editor
@@ -131,6 +132,7 @@ ActionRPG/
 │   │   └── BP_PauseMenu.uasset   # Pause menu Blueprint
 │   ├── KoreanTraditionalMartialArts/ # Combat animations
 │   ├── FreeAnimationLibrary/     # General animations
+│   ├── UndergroundSciFi/         # Sci-fi environment assets
 │   ├── Collections/              # Asset collections
 │   ├── Developers/               # Developer-specific assets
 │   ├── __ExternalActors__/       # External actor references
@@ -247,7 +249,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## 🙏 Acknowledgments
 
 -   Epic Games for Unreal Engine 5
--   Asset creators for KoreanTraditionalMartialArts and FreeAnimationLibrary
+-   Asset creators for KoreanTraditionalMartialArts, FreeAnimationLibrary, UndergroundSciFi
 -   Unreal Engine community for invaluable resources
 
 ## 📞 Contact

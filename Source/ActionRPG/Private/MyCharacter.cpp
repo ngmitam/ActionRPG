@@ -81,8 +81,7 @@ void AMyCharacter::BeginPlay()
 void AMyCharacter::InitializePlayerUI()
 {
 	// Create and display the Player Controller
-	if(APlayerController *PlayerController =
-			Cast<APlayerController>(Controller))
+	if(APlayerController *PlayerController = GetPlayerController())
 	{
 		if(PlayerUIClass)
 		{
@@ -297,7 +296,7 @@ void AMyCharacter::HandleDeath()
 	AMyBaseCharacter::HandleDeath();
 
 	// Disable input
-	if(APlayerController *PC = Cast<APlayerController>(GetController()))
+	if(APlayerController *PC = GetPlayerController())
 	{
 		PC->DisableInput(PC);
 	}
@@ -390,7 +389,7 @@ void AMyCharacter::FindNearbyEnemies()
 		{
 			const float Distance =
 				FVector::Dist(PlayerLocation, Enemy->GetActorLocation());
-			if(Distance <= DetectionRange)
+			if(Distance <= DetectionRange && Enemy->IsActivated())
 			{
 				NearbyEnemies.Add(Enemy);
 			}

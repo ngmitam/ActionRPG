@@ -57,6 +57,9 @@ public:
 	// Set focused state
 	void SetFocused(bool bFocused);
 
+	// Check if enemy is activated (for boss mechanics)
+	virtual bool IsActivated() const { return true; }
+
 	// Handle death - override from base class
 	virtual void HandleDeath() override;
 

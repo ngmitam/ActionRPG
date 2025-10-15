@@ -4,6 +4,7 @@
 
 #include "BehaviorTree/BTTaskNode.h"
 #include "CoreMinimal.h"
+#include "MyEnemy.h"
 #include "MyEnemyAIController.h"
 #include "BTTask_FindPlayer.generated.h"
 
@@ -30,8 +31,9 @@ protected:
 	FBlackboardKeySelector PlayerKey;
 
 private:
-	void StartRandomMovement(AAIController *AIController);
+	void StartMovement(AAIController *AIController, AMyEnemy *Enemy);
 
 	FVector CurrentTargetLocation;
 	bool bHasTarget;
+	int32 CurrentPatrolIndex = 0;
 };

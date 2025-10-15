@@ -36,7 +36,7 @@ void AMyPlayerController::OnPausePressed()
 
 void AMyPlayerController::OnMove(const FInputActionValue &Value)
 {
-	if(AMyCharacter *ControlledCharacter = Cast<AMyCharacter>(GetPawn()))
+	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
 	{
 		ControlledCharacter->Move(Value);
 	}
@@ -44,7 +44,7 @@ void AMyPlayerController::OnMove(const FInputActionValue &Value)
 
 void AMyPlayerController::OnLook(const FInputActionValue &Value)
 {
-	if(AMyCharacter *ControlledCharacter = Cast<AMyCharacter>(GetPawn()))
+	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
 	{
 		ControlledCharacter->Look(Value);
 	}
@@ -52,7 +52,7 @@ void AMyPlayerController::OnLook(const FInputActionValue &Value)
 
 void AMyPlayerController::OnSprintStarted()
 {
-	if(AMyCharacter *ControlledCharacter = Cast<AMyCharacter>(GetPawn()))
+	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
 	{
 		ControlledCharacter->StartSprint();
 	}
@@ -60,7 +60,7 @@ void AMyPlayerController::OnSprintStarted()
 
 void AMyPlayerController::OnSprintCompleted()
 {
-	if(AMyCharacter *ControlledCharacter = Cast<AMyCharacter>(GetPawn()))
+	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
 	{
 		ControlledCharacter->StopSprint();
 	}
@@ -68,7 +68,7 @@ void AMyPlayerController::OnSprintCompleted()
 
 void AMyPlayerController::OnJumpStarted()
 {
-	if(AMyCharacter *ControlledCharacter = Cast<AMyCharacter>(GetPawn()))
+	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
 	{
 		ControlledCharacter->Jump();
 	}
@@ -76,7 +76,7 @@ void AMyPlayerController::OnJumpStarted()
 
 void AMyPlayerController::OnJumpCompleted()
 {
-	if(AMyCharacter *ControlledCharacter = Cast<AMyCharacter>(GetPawn()))
+	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
 	{
 		ControlledCharacter->StopJumping();
 	}
@@ -84,7 +84,7 @@ void AMyPlayerController::OnJumpCompleted()
 
 void AMyPlayerController::OnDodgeStarted()
 {
-	if(AMyCharacter *ControlledCharacter = Cast<AMyCharacter>(GetPawn()))
+	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
 	{
 		ControlledCharacter->Dodge();
 	}
@@ -92,7 +92,7 @@ void AMyPlayerController::OnDodgeStarted()
 
 void AMyPlayerController::OnAttackStarted()
 {
-	if(AMyCharacter *ControlledCharacter = Cast<AMyCharacter>(GetPawn()))
+	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
 	{
 		ControlledCharacter->Attack();
 	}
@@ -100,7 +100,7 @@ void AMyPlayerController::OnAttackStarted()
 
 void AMyPlayerController::OnFocusEnemyStarted()
 {
-	if(AMyCharacter *ControlledCharacter = Cast<AMyCharacter>(GetPawn()))
+	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
 	{
 		ControlledCharacter->FocusEnemy();
 	}

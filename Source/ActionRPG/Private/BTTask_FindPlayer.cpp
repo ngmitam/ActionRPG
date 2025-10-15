@@ -8,6 +8,7 @@
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "Math/UnrealMathUtility.h"
+#include "MyEnemy.h"
 #include "NavigationSystem.h"
 #include "Navigation/PathFollowingComponent.h"
 
@@ -34,6 +35,12 @@ EBTNodeResult::Type UBTTask_FindPlayer::ExecuteTask(
 		return EBTNodeResult::Failed;
 	}
 
+	AMyEnemy *Enemy = Cast<AMyEnemy>(AIController->GetPawn());
+	if(!Enemy || !Enemy->IsActivated())
+	{
+		return EBTNodeResult::Failed;
+	}
+
 	// Find player character
 	ACharacter *PlayerCharacter =
 		UGameplayStatics::GetPlayerCharacter(AIController->GetWorld(), 0);
@@ -47,8 +54,8 @@ EBTNodeResult::Type UBTTask_FindPlayer::ExecuteTask(
 		PlayerCharacter->GetActorLocation());
 	if(Distance > EnemyController->DetectionRange)
 	{
-		// Player not in range, start random movement
-		StartRandomMovement(AIController);
+		// Player not in range, start movement
+		StartMovement(AIController, Enemy);
 		return EBTNodeResult::InProgress;
 	}
 
@@ -71,8 +78,8 @@ EBTNodeResult::Type UBTTask_FindPlayer::ExecuteTask(
 
 	if(bHit && HitResult.GetActor() != PlayerCharacter)
 	{
-		// Something is blocking the line of sight, continue random movement
-		StartRandomMovement(AIController);
+		// Something is blocking the line of sight, continue movement
+		StartMovement(AIController, Enemy);
 		return EBTNodeResult::InProgress;
 	}
 
@@ -102,6 +109,13 @@ void UBTTask_FindPlayer::TickTask(
 	AMyEnemyAIController *EnemyController =
 		Cast<AMyEnemyAIController>(AIController);
 	if(!EnemyController)
+	{
+		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+		return;
+	}
+
+	AMyEnemy *Enemy = Cast<AMyEnemy>(AIController->GetPawn());
+	if(!Enemy || !Enemy->IsActivated())
 	{
 		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 		return;
@@ -158,37 +172,60 @@ void UBTTask_FindPlayer::TickTask(
 		if(Status == EPathFollowingStatus::Idle)
 		{
 			bHasTarget = false;
-			StartRandomMovement(AIController);
+			StartMovement(AIController, Enemy);
 		}
 	}
 	else
 	{
-		StartRandomMovement(AIController);
+		StartMovement(AIController, Enemy);
 	}
 }
 
-void UBTTask_FindPlayer::StartRandomMovement(AAIController *AIController)
+void UBTTask_FindPlayer::StartMovement(
+	AAIController *AIController, AMyEnemy *Enemy)
 {
-	if(!AIController)
+	if(!AIController || !Enemy)
 	{
 		return;
 	}
 
-	UNavigationSystemV1 *NavSys =
-		UNavigationSystemV1::GetCurrent(AIController->GetWorld());
-	if(!NavSys)
+	if(Enemy->PatrolPoints.Num() > 0)
 	{
-		return;
+		// Patrol mode: move to next patrol point
+		if(CurrentPatrolIndex >= Enemy->PatrolPoints.Num())
+		{
+			CurrentPatrolIndex = 0;
+		}
+		AActor *PatrolPoint = Enemy->PatrolPoints[CurrentPatrolIndex];
+		if(PatrolPoint)
+		{
+			CurrentTargetLocation = PatrolPoint->GetActorLocation();
+			bHasTarget = true;
+			AIController->MoveToLocation(CurrentTargetLocation);
+			CurrentPatrolIndex =
+				(CurrentPatrolIndex + 1) % Enemy->PatrolPoints.Num();
+		}
 	}
-
-	FVector Origin = AIController->GetPawn()->GetActorLocation();
-	FNavLocation RandomLocation;
-
-	// Find random reachable point within 1000 units
-	if(NavSys->GetRandomReachablePointInRadius(Origin, 1000.0f, RandomLocation))
+	else
 	{
-		CurrentTargetLocation = RandomLocation.Location;
-		bHasTarget = true;
-		AIController->MoveToLocation(CurrentTargetLocation);
+		// Random movement mode
+		UNavigationSystemV1 *NavSys =
+			UNavigationSystemV1::GetCurrent(AIController->GetWorld());
+		if(!NavSys)
+		{
+			return;
+		}
+
+		FVector Origin = AIController->GetPawn()->GetActorLocation();
+		FNavLocation RandomLocation;
+
+		// Find random reachable point within 1000 units
+		if(NavSys->GetRandomReachablePointInRadius(
+			   Origin, 1000.0f, RandomLocation))
+		{
+			CurrentTargetLocation = RandomLocation.Location;
+			bHasTarget = true;
+			AIController->MoveToLocation(CurrentTargetLocation);
+		}
 	}
 }

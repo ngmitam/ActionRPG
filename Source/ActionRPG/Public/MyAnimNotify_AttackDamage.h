@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "GameplayEffect.h"
+#include "MyGameConfig.h"
 #include "MyAnimNotify_AttackDamage.generated.h"
 
 /**
@@ -24,14 +25,15 @@ public:
 
 	// Trace properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack")
-	float TraceLength = 50.0f;
+	float TraceLength = FGameConfig::GetDefault().AttackTraceLength;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack")
-	float TraceRadius = 10.0f;
+	float TraceRadius = FGameConfig::GetDefault().AttackTraceRadius;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack")
-	FVector TraceOffset =
-		FVector(100.0f, 0.0f, 0.0f); // Offset from character location
+	FVector TraceOffset = FVector(FGameConfig::GetDefault().AttackTraceOffsetX,
+		FGameConfig::GetDefault().AttackTraceOffsetY,
+		FGameConfig::GetDefault().AttackTraceOffsetZ);
 
 	// Damage properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")

@@ -87,6 +87,26 @@ struct FGameConfig
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
 	float AttackRangeTolerance = 50.0f;
 
+	// Attack Trace
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float AttackTraceLength = 50.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float AttackTraceRadius = 10.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float AttackTraceOffsetX = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float AttackTraceOffsetY = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float AttackTraceOffsetZ = 0.0f;
+
+	// Knockback
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float KnockbackForce = 500.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
 	int32 MaxComboCount = 3;
 

@@ -102,9 +102,10 @@ void UMyAnimNotify_AttackDamage::PerformTraceAndApplyDamage(AActor *OwnerActor)
 							(Enemy->GetActorLocation()
 								- OwnerActor->GetActorLocation())
 								.GetSafeNormal();
-						float KnockbackForce = 500.0f; // Adjust as needed
 						Movement->AddImpulse(
-							KnockbackDirection * KnockbackForce, true);
+							KnockbackDirection
+								* FGameConfig::GetDefault().KnockbackForce,
+							true);
 					}
 				}
 				else if(AMyCharacter *Player = Cast<AMyCharacter>(HitActor))

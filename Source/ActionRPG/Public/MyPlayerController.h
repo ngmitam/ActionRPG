@@ -7,6 +7,8 @@
 #include "EnhancedInputComponent.h"
 #include "MyPlayerController.generated.h"
 
+class AMyCharacter;
+
 /**
  * Custom Player Controller for ActionRPG with centralized input handling
  */
@@ -66,4 +68,15 @@ protected:
 	void OnFocusEnemyStarted();
 
 	virtual void SetupInputComponent() override;
+
+private:
+	/**
+	 * @brief Get the controlled character, cast to AMyCharacter
+	 * @return Pointer to the controlled AMyCharacter, or nullptr if not
+	 * available
+	 */
+	AMyCharacter *GetControlledCharacter() const
+	{
+		return Cast<AMyCharacter>(GetPawn());
+	}
 };

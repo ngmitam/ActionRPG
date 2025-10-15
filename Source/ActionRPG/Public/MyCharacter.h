@@ -217,6 +217,15 @@ private:
 	 */
 	void ResetLevel();
 
+	/**
+	 * @brief Get the player controller, cast to APlayerController
+	 * @return Pointer to the player controller, or nullptr if not available
+	 */
+	APlayerController *GetPlayerController() const
+	{
+		return Cast<APlayerController>(Controller);
+	}
+
 	// Enemy targeting
 	AMyEnemy *CurrentTarget;
 	TArray<AMyEnemy *> NearbyEnemies;
