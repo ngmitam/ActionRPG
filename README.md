@@ -3,7 +3,7 @@
 [![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.6-blue.svg)](https://www.unrealengine.com/)
 [![C++](https://img.shields.io/badge/C%2B%2B-17-orange.svg)](https://isocpp.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.0.1-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](CHANGELOG.md)
 
 A modern Action RPG built with Unreal Engine 5, showcasing advanced game development techniques, asset integration, and polished gameplay mechanics. This project demonstrates expertise in C++ programming, Blueprint scripting, animation systems, and cross-platform build pipelines.
 
@@ -35,7 +35,7 @@ A modern Action RPG built with Unreal Engine 5, showcasing advanced game develop
 ### AI & Enemies
 
 -   **Behavior Trees**: Intelligent enemy AI with patrol, alert, and attack behaviors
--   **Detection Systems**: Configurable detection ranges and alerting mechanisms for responsive AI
+-   **Detection Systems**: Configurable detection ranges with line-of-sight checks for responsive AI
 -   **Boss Encounters**: Special boss areas with unique mechanics, spear attacks, and triggers
 -   **Enemy Types**: Diverse enemy classes with different combat styles and stun vulnerabilities
 -   **Targeting System**: Camera lock and input actions for precise enemy targeting
@@ -55,6 +55,7 @@ A modern Action RPG built with Unreal Engine 5, showcasing advanced game develop
 -   **Build Automation**: Custom VS Code tasks for streamlined development workflow
 -   **UI System**: Loading screens, player UI, pause menus with resume/quit functionality, and centralized input management
 -   **Gameplay Ability System (GAS)**: Advanced ability and attribute management with GameplayEffect assets
+-   **Configuration Management**: Centralized game configuration system for maintainable settings
 
 ### Game Features
 
@@ -63,6 +64,7 @@ A modern Action RPG built with Unreal Engine 5, showcasing advanced game develop
 -   **Arena Gameplay**: Dedicated combat arena for testing mechanics
 -   **Boss Areas**: Specialized zones for challenging boss encounters
 -   **Stun Mechanics**: Combat interruptions for strategic gameplay
+-   **Minimap System**: Real-time minimap for navigation and awareness
 
 ## 🛠️ Prerequisites
 
