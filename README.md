@@ -181,11 +181,37 @@ ActionRPG/
 
 ## 🔨 Building
 
-Available VS Code tasks:
+Available VS Code tasks for different build configurations:
 
+### Game Builds
+
+-   `ActionRPG Win64 Debug Build` - Debug build for development debugging
+-   `ActionRPG Win64 Debug Rebuild` - Clean and rebuild debug version
+-   `ActionRPG Win64 Debug Clean` - Clean debug build files
+-   `ActionRPG Win64 DebugGame Build` - DebugGame build for testing
+-   `ActionRPG Win64 DebugGame Rebuild` - Clean and rebuild DebugGame version
+-   `ActionRPG Win64 DebugGame Clean` - Clean DebugGame build files
 -   `ActionRPG Win64 Development Build` - Standard development build
+-   `ActionRPG Win64 Development Rebuild` - Clean and rebuild development version
+-   `ActionRPG Win64 Development Clean` - Clean development build files
+-   `ActionRPG Win64 Test Build` - Test build for automated testing
+-   `ActionRPG Win64 Test Rebuild` - Clean and rebuild test version
+-   `ActionRPG Win64 Test Clean` - Clean test build files
 -   `ActionRPG Win64 Shipping Build` - Optimized release build
--   `ActionRPGEditor Win64 Development Build` - Editor build
+-   `ActionRPG Win64 Shipping Rebuild` - Clean and rebuild shipping version
+-   `ActionRPG Win64 Shipping Clean` - Clean shipping build files
+
+### Editor Builds
+
+-   `ActionRPGEditor Win64 Debug Build` - Editor debug build
+-   `ActionRPGEditor Win64 Debug Rebuild` - Clean and rebuild editor debug
+-   `ActionRPGEditor Win64 Debug Clean` - Clean editor debug build files
+-   `ActionRPGEditor Win64 DebugGame Build` - Editor DebugGame build
+-   `ActionRPGEditor Win64 DebugGame Rebuild` - Clean and rebuild editor DebugGame
+-   `ActionRPGEditor Win64 DebugGame Clean` - Clean editor DebugGame build files
+-   `ActionRPGEditor Win64 Development Build` - Editor development build
+-   `ActionRPGEditor Win64 Development Rebuild` - Clean and rebuild editor development
+-   `ActionRPGEditor Win64 Development Clean` - Clean editor development build files
 
 ## 📚 What I Learned
 

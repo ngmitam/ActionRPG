@@ -21,8 +21,17 @@ public:
 	virtual EBTNodeResult::Type ExecuteTask(
 		UBehaviorTreeComponent &OwnerComp, uint8 *NodeMemory) override;
 
+	virtual void TickTask(UBehaviorTreeComponent &OwnerComp, uint8 *NodeMemory,
+		float DeltaSeconds) override;
+
 protected:
 	// Blackboard key to store the player
 	UPROPERTY(EditAnywhere, Category = "Blackboard")
 	FBlackboardKeySelector PlayerKey;
+
+private:
+	void StartRandomMovement(AAIController *AIController);
+
+	FVector CurrentTargetLocation;
+	bool bHasTarget;
 };

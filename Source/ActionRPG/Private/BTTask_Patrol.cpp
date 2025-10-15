@@ -4,6 +4,9 @@
 
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Engine/World.h"
+#include "GameFramework/Character.h"
+#include "Kismet/GameplayStatics.h"
 #include "MyEnemyAIController.h"
 #include "MyEnemy.h"
 #include "NavigationSystem.h"
@@ -71,10 +74,60 @@ void UBTTask_Patrol::TickTask(
 		AIController->MoveToLocation(TargetLocation);
 	}
 
-	// Check if alerted
-	UBlackboardComponent *BlackboardComp = OwnerComp.GetBlackboardComponent();
-	if(BlackboardComp && BlackboardComp->GetValueAsBool(FName("Alerted")))
+	// Check for player detection
+	AMyEnemyAIController *EnemyController =
+		Cast<AMyEnemyAIController>(AIController);
+	if(!EnemyController)
 	{
+		return;
+	}
+
+	// Find player character
+	ACharacter *PlayerCharacter =
+		UGameplayStatics::GetPlayerCharacter(AIController->GetWorld(), 0);
+	if(!PlayerCharacter)
+	{
+		return;
+	}
+
+	// Check distance for detection
+	float PlayerDistance =
+		FVector::Dist(AIController->GetPawn()->GetActorLocation(),
+			PlayerCharacter->GetActorLocation());
+	if(PlayerDistance > EnemyController->DetectionRange)
+	{
+		return;
+	}
+
+	// Check line of sight
+	UWorld *World = AIController->GetWorld();
+	if(!World)
+	{
+		return;
+	}
+
+	FVector Start = AIController->GetPawn()->GetActorLocation();
+	FVector End = PlayerCharacter->GetActorLocation();
+
+	FHitResult HitResult;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(AIController->GetPawn()); // Ignore self
+
+	bool bHit = World->LineTraceSingleByChannel(
+		HitResult, Start, End, ECC_Visibility, QueryParams);
+
+	if(bHit && HitResult.GetActor() != PlayerCharacter)
+	{
+		// Something is blocking the line of sight
+		return;
+	}
+
+	// Player detected, set in blackboard and finish patrol
+	UBlackboardComponent *BlackboardComp = OwnerComp.GetBlackboardComponent();
+	if(BlackboardComp)
+	{
+		BlackboardComp->SetValueAsObject(
+			PlayerKey.SelectedKeyName, PlayerCharacter);
 		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 	}
 }

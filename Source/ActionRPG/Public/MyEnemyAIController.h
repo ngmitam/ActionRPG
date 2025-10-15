@@ -27,13 +27,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	float DetectionRange = 500.0f;
 
-	// Alert range
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
-	float AlertRange = 1000.0f;
-
-	// Alert nearby enemies
-	void AlertNearbyEnemies();
-
 protected:
 	virtual void BeginPlay() override;
 

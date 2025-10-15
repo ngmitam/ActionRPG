@@ -58,30 +58,3 @@ void AMyEnemyAIController::OnUnPossess()
 
 	BehaviorTreeComponent->StopTree();
 }
-
-void AMyEnemyAIController::AlertNearbyEnemies()
-{
-	TArray<AActor *> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(
-		GetWorld(), AMyEnemyAIController::StaticClass(), FoundActors);
-
-	for(AActor *Actor : FoundActors)
-	{
-		AMyEnemyAIController *OtherController =
-			Cast<AMyEnemyAIController>(Actor);
-		if(OtherController && OtherController != this)
-		{
-			float Distance = FVector::Dist(GetPawn()->GetActorLocation(),
-				OtherController->GetPawn()->GetActorLocation());
-			if(Distance <= AlertRange)
-			{
-				// Set alerted in blackboard
-				if(OtherController->BlackboardComponent)
-				{
-					OtherController->BlackboardComponent->SetValueAsBool(
-						FName("Alerted"), true);
-				}
-			}
-		}
-	}
-}

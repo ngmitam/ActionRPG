@@ -22,6 +22,11 @@ public:
 	virtual void TickTask(UBehaviorTreeComponent &OwnerComp, uint8 *NodeMemory,
 		float DeltaSeconds) override;
 
+protected:
+	// Blackboard key to store the player
+	UPROPERTY(EditAnywhere, Category = "Blackboard")
+	FBlackboardKeySelector PlayerKey;
+
 private:
 	int32 CurrentPatrolIndex = 0;
 };
