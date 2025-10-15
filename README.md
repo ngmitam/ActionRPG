@@ -3,6 +3,7 @@
 [![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.6-blue.svg)](https://www.unrealengine.com/)
 [![C++](https://img.shields.io/badge/C%2B%2B-17-orange.svg)](https://isocpp.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-0.0.1-green.svg)](CHANGELOG.md)
 
 A modern Action RPG built with Unreal Engine 5, showcasing advanced game development techniques, asset integration, and polished gameplay mechanics. This project demonstrates expertise in C++ programming, Blueprint scripting, animation systems, and cross-platform build pipelines.
 
@@ -228,6 +229,10 @@ This project enhanced my skills in:
 -   **Asset Pipeline**: Managing large asset libraries efficiently
 -   **Build Systems**: Automating deployment across platforms
 -   **Version Control**: Best practices for collaborative game development
+
+## 📝 Changelog
+
+For a detailed list of changes, features, and improvements, see [CHANGELOG.md](CHANGELOG.md).
 
 ## 🤝 Contributing
 
