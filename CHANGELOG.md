@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.0.1] - 2025-10-15
+## [0.0.1] - 2025-10-03
 
 ### Added
 
@@ -29,7 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Animation & Visuals
 - Integration of FreeAnimationLibrary for diverse character movements
-- Motion matching for smooth transitions between combat states
 - Particle effects for visual feedback on attacks and impacts
 - Custom animation notifies for gameplay events
 
@@ -47,7 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### UI System
 - Loading screens for level transitions
 - Player UI for health and stamina display
-- Pause menu with resume/quit functionality
 - Centralized input management system
 
 #### Game Features
@@ -67,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Source code organization with Public/Private directories
 - Content organization with Maps, Core assets, and asset packs
 - Configuration files for editor, engine, game, gameplay tags, and input
-- Asset integration for KoreanTraditionalMartialArts, FreeAnimationLibrary, and UndergroundSciFi
+- Asset integration for KoreanTraditionalMartialArts and FreeAnimationLibrary
 
 ### Technical Details
 - **Engine**: Unreal Engine 5.6
@@ -83,6 +81,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Attack: Left Mouse Button
 - Dodge: Space
 - Focus/Target Lock: Right Mouse Button
-- Pause Menu: Escape
 
 [0.0.1]: https://github.com/ngmitam/ActionRPG/releases/tag/0.0.1
