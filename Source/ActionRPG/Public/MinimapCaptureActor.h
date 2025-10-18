@@ -20,9 +20,6 @@ public:
 	USceneCaptureComponent2D *SceneCaptureComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Minimap")
-	UTextureRenderTarget2D *RenderTarget;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Minimap")
 	float CaptureHeight = 1000.0f; // Height above ground to capture
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Minimap")

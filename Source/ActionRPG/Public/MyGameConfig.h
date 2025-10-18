@@ -152,6 +152,13 @@ struct FGameConfig
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	float HealthBarZOffset = 100.0f;
 
+	// UI Z-Orders
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	int32 LoadingScreenZOrder = 100;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	int32 PauseMenuZOrder = 50;
+
 	// UI Colors
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	FLinearColor HealthColorHigh = FLinearColor::Green;

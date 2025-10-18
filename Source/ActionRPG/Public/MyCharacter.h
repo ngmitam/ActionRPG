@@ -11,6 +11,7 @@
 #include "MyAttackAbility.h"
 #include "MyAttributeComponent.h"
 #include "MyPlayerUI.h"
+#include "MyEnemyTargetingComponent.h"
 #include "MyCharacter.generated.h"
 
 class AMyEnemy;
@@ -86,7 +87,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Targeting")
 	bool IsEnemyInFocusRange(AMyEnemy *Enemy) const
 	{
-		return NearbyEnemies.Contains(Enemy);
+		return EnemyTargetingComponent
+				   ? EnemyTargetingComponent->IsEnemyInFocusRange(Enemy)
+				   : false;
 	}
 
 	/**
@@ -97,7 +100,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Targeting")
 	bool IsEnemyFocused(AMyEnemy *Enemy) const
 	{
-		return CurrentTarget == Enemy;
+		return EnemyTargetingComponent
+				   ? EnemyTargetingComponent->IsEnemyFocused(Enemy)
+				   : false;
 	}
 
 	// Handle death - override from base class
@@ -118,6 +123,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	UCameraComponent *CameraComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Targeting")
+	UMyEnemyTargetingComponent *EnemyTargetingComponent;
 
 	// INPUT HANDLERS - Now called by PlayerController
 public:
@@ -226,51 +234,9 @@ private:
 		return Cast<APlayerController>(Controller);
 	}
 
-	// Enemy targeting
-	AMyEnemy *CurrentTarget;
-	TArray<AMyEnemy *> NearbyEnemies;
-	TArray<AMyEnemy *> PreviousNearbyEnemies;
-	bool bCameraLocked;
-	FTimerHandle UpdateEnemiesTimerHandle;
-
 	/**
-	 * @brief Update the list of nearby enemies and their UI state
+	 * @brief Helper method to cancel abilities by gameplay tag
+	 * @param AbilityTag The gameplay tag of the ability to cancel
 	 */
-	void UpdateNearbyEnemies();
-
-	/**
-	 * @brief Find all enemies within detection range
-	 */
-	void FindNearbyEnemies();
-
-	/**
-	 * @brief Sort nearby enemies by distance from character
-	 */
-	void SortEnemiesByDistance();
-
-	/**
-	 * @brief Update health bar visibility for nearby enemies
-	 */
-	void UpdateHealthBarVisibility();
-
-	/**
-	 * @brief Validate current target and cycle if invalid
-	 */
-	void ValidateCurrentTarget();
-
-	/**
-	 * @brief Set the current target enemy with proper state management
-	 * @param NewTarget The enemy to target, nullptr to clear target
-	 */
-	void SetTarget(AMyEnemy *NewTarget);
-
-	/**
-	 * @brief Clear the current target enemy
-	 */
-	void ClearTarget();
-
-	/**
-	 * @brief Cycle to the next enemy target
-	 */
-	void CycleTarget();
+	void CancelAbilityByTag(const FName &AbilityTag);
 };

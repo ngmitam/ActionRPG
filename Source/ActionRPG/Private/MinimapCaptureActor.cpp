@@ -31,11 +31,6 @@ void AMinimapCaptureActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if(RenderTarget)
-	{
-		SceneCaptureComponent->TextureTarget = RenderTarget;
-	}
-
 	// Start update timer
 	GetWorldTimerManager().SetTimer(UpdateTimerHandle, this,
 		&AMinimapCaptureActor::UpdateCapture, UpdateInterval, true);
@@ -43,7 +38,7 @@ void AMinimapCaptureActor::BeginPlay()
 
 void AMinimapCaptureActor::UpdateCapture()
 {
-	if(SceneCaptureComponent && RenderTarget)
+	if(SceneCaptureComponent && SceneCaptureComponent->TextureTarget)
 	{
 		// Follow player position
 		APawn *PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);

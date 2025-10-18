@@ -76,11 +76,11 @@ public:
 
 	// Public getter for sprint status
 	UFUNCTION(BlueprintPure, Category = "Character State")
-	bool IsSprinting() const { return bIsSprinting; }
+	bool IsSprinting() const;
 
 	// Public getter for dodge status
 	UFUNCTION(BlueprintPure, Category = "Character State")
-	bool IsDodging() const { return bIsDodging; }
+	bool IsDodging() const;
 
 	// Set sprint status (called by abilities)
 	void SetSprinting(bool bSprinting) { bIsSprinting = bSprinting; }

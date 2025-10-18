@@ -5,6 +5,9 @@
 #include "CoreMinimal.h"
 #include "MyAbilityTypes.h"
 #include "MyGameConfig.h"
+#include "MinimapCaptureActor.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "MinimapWidget.h"
 #include "GameFramework/GameMode.h"
 #include "MyGameMode.generated.h"
 
@@ -34,6 +37,9 @@ public:
 		const FText &LoadingText = FText::FromString(TEXT("Loading...")));
 	void OnLevelLoaded();
 
+	// Minimap setup
+	void SetupMinimap();
+
 protected:
 	// Loading screen widget
 	UPROPERTY()
@@ -49,4 +55,31 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UPauseMenuWidget> PauseMenuWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Minimap")
+	TSubclassOf<AMinimapCaptureActor> MinimapCaptureActorClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Minimap")
+	UTextureRenderTarget2D *MinimapRenderTarget;
+
+private:
+	/**
+	 * Setup the minimap capture actor for rendering the minimap
+	 */
+	void SetupMinimapCaptureActor();
+
+	/**
+	 * Setup the timer for minimap initialization to ensure proper timing
+	 */
+	void SetupMinimapTimer();
+
+	/**
+	 * Initialize the loading screen widget and set it up for display
+	 */
+	void InitializeLoadingScreen();
+
+	/**
+	 * Initialize the pause menu widget and hide it initially
+	 */
+	void InitializePauseMenu();
 };

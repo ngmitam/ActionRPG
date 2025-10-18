@@ -4,6 +4,7 @@
 
 #include "Blueprint/UserWidget.h"
 #include "CoreMinimal.h"
+#include "MinimapWidget.h"
 #include "MyAbilityTypes.h"
 #include "MyGameConfig.h"
 #include "MyPlayerUI.generated.h"
@@ -39,6 +40,9 @@ public:
 		OwningCharacter = InCharacter;
 	}
 
+	// Get Minimap Widget
+	UMinimapWidget *GetMinimapWidget() const { return MinimapWidget; }
+
 	// Blueprint-callable functions for UI updates
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void UpdateHealthDisplay();
@@ -56,6 +60,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite, Category = "UI Elements")
 	UProgressBar *StaminaBar;
+
+	UPROPERTY(meta = (BindWidget), BlueprintReadWrite, Category = "UI Elements")
+	UMinimapWidget *MinimapWidget;
 
 private:
 	// Reference to the owning character

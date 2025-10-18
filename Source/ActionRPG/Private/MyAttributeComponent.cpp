@@ -26,6 +26,16 @@ UMyAttributeComponent::GetAbilitySystemComponent() const
 	return AbilitySystemComponent;
 }
 
+bool UMyAttributeComponent::IsSprinting() const
+{
+	return bIsSprinting;
+}
+
+bool UMyAttributeComponent::IsDodging() const
+{
+	return bIsDodging;
+}
+
 void UMyAttributeComponent::OnRegister()
 {
 	Super::OnRegister();
@@ -156,9 +166,6 @@ void UMyAttributeComponent::HandleInitializationRetry()
 	{
 		RetryCount++;
 		ScheduleRetryInitialization();
-	}
-	else
-	{
 	}
 }
 

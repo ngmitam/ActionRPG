@@ -53,6 +53,11 @@ AMyCharacter::AMyCharacter()
 		SpringArmComponent, USpringArmComponent::SocketName);
 	CameraComponent->bUsePawnControlRotation = false;
 
+	// Enemy Targeting Component
+	EnemyTargetingComponent =
+		CreateDefaultSubobject<UMyEnemyTargetingComponent>(
+			TEXT("EnemyTargetingComponent"));
+
 	// Attribute Component will be created in BeginPlay
 }
 void AMyCharacter::PossessedBy(AController *NewController)
@@ -71,11 +76,7 @@ void AMyCharacter::BeginPlay()
 
 	InitializePlayerUI();
 
-	// Start updating nearby enemies
-	UpdateNearbyEnemies(); // Initial update
-	GetWorld()->GetTimerManager().SetTimer(UpdateEnemiesTimerHandle, this,
-		&AMyCharacter::UpdateNearbyEnemies,
-		FGameConfig::GetDefault().EnemyUpdateInterval, true);
+	// Enemy targeting is now handled by the EnemyTargetingComponent
 }
 
 void AMyCharacter::InitializePlayerUI()
@@ -103,18 +104,7 @@ void AMyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Update camera lock
-	if(bCameraLocked && CurrentTarget)
-	{
-		FVector Direction =
-			(CurrentTarget->GetActorLocation() - GetActorLocation())
-				.GetSafeNormal();
-		FRotator TargetRotation = Direction.Rotation();
-		if(Controller)
-		{
-			Controller->SetControlRotation(TargetRotation);
-		}
-	}
+	// Camera lock is now handled by the EnemyTargetingComponent
 }
 
 void AMyCharacter::Move(const FInputActionValue &Value)
@@ -141,7 +131,9 @@ void AMyCharacter::Move(const FInputActionValue &Value)
 
 void AMyCharacter::Look(const FInputActionValue &Value)
 {
-	if(IsAttacking() || bCameraLocked)
+	if(IsAttacking()
+		|| (EnemyTargetingComponent
+			&& EnemyTargetingComponent->GetCurrentTarget()))
 		return;
 
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -174,17 +166,11 @@ void AMyCharacter::StopSprint()
 	if(!CanPerformAbility())
 		return;
 
-	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
-	if(!ASC)
+	CancelAbilityByTag(AbilityTags::Sprint);
+	if(AttributeComponent)
 	{
-		return;
+		AttributeComponent->SetSprinting(false);
 	}
-
-	FGameplayTagContainer SprintAbilityTagContainer;
-	SprintAbilityTagContainer.AddTag(
-		FGameplayTag::RequestGameplayTag(AbilityTags::Sprint));
-	ASC->CancelAbilities(&SprintAbilityTagContainer);
-	AttributeComponent->SetSprinting(false);
 }
 
 void AMyCharacter::Jump()
@@ -195,12 +181,11 @@ void AMyCharacter::Jump()
 	Super::Jump();
 
 	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
-	if(!ASC)
+	if(ASC)
 	{
-		return;
+		ASC->AbilityLocalInputPressed(
+			static_cast<int32>(EMyAbilityInputID::Jump));
 	}
-
-	ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Jump));
 }
 
 void AMyCharacter::StopJumping()
@@ -208,26 +193,22 @@ void AMyCharacter::StopJumping()
 	if(!CanPerformAbility())
 		return;
 
-	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
-	if(!ASC)
-	{
-		return;
-	}
-
-	FGameplayTagContainer JumpAbilityTagContainer;
-	JumpAbilityTagContainer.AddTag(
-		FGameplayTag::RequestGameplayTag(AbilityTags::Jump));
-	ASC->CancelAbilities(&JumpAbilityTagContainer);
+	CancelAbilityByTag(AbilityTags::Jump);
 }
 
 void AMyCharacter::Dodge()
 {
-	if(!CanPerformAbility() || AttributeComponent->IsDodging())
+	if(!CanPerformAbility()
+		|| (AttributeComponent && AttributeComponent->IsDodging()))
 	{
 		return;
 	}
 
-	UAbilitySystemComponent *ASC = GetAbilitySystemComponent();
+	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
+	if(!ASC || !AttributeComponent)
+	{
+		return;
+	}
 
 	AttributeComponent->SetDodging(true);
 	ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Dodge));
@@ -241,16 +222,20 @@ void AMyCharacter::Dodge()
 
 void AMyCharacter::ResetDodgeStatus()
 {
-	if(AttributeComponent)
+	if(!AttributeComponent)
 	{
-		AttributeComponent->SetDodging(false);
-		if(UAbilitySystemComponent *ASCInner = TryGetAbilitySystem())
-		{
-			FGameplayTagContainer DodgeAbilityTagContainer;
-			DodgeAbilityTagContainer.AddTag(
-				FGameplayTag::RequestGameplayTag(AbilityTags::Dodge));
-			ASCInner->CancelAbilities(&DodgeAbilityTagContainer);
-		}
+		return;
+	}
+
+	AttributeComponent->SetDodging(false);
+
+	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
+	if(ASC)
+	{
+		FGameplayTagContainer DodgeAbilityTagContainer;
+		DodgeAbilityTagContainer.AddTag(
+			FGameplayTag::RequestGameplayTag(AbilityTags::Dodge));
+		ASC->CancelAbilities(&DodgeAbilityTagContainer);
 	}
 }
 
@@ -363,170 +348,23 @@ UMyAttackAbility *AMyCharacter::GetActiveAttackAbility() const
 	return nullptr;
 }
 
-void AMyCharacter::UpdateNearbyEnemies()
-{
-	PreviousNearbyEnemies = NearbyEnemies;
-	NearbyEnemies.Empty();
-
-	FindNearbyEnemies();
-	SortEnemiesByDistance();
-	UpdateHealthBarVisibility();
-	ValidateCurrentTarget();
-}
-
-void AMyCharacter::FindNearbyEnemies()
-{
-	TArray<AActor *> AllEnemies;
-	UGameplayStatics::GetAllActorsOfClass(
-		GetWorld(), AMyEnemy::StaticClass(), AllEnemies);
-
-	const float DetectionRange = FGameConfig::GetDefault().EnemyDetectionRange;
-	const FVector PlayerLocation = GetActorLocation();
-
-	for(AActor *Actor : AllEnemies)
-	{
-		if(AMyEnemy *Enemy = Cast<AMyEnemy>(Actor))
-		{
-			const float Distance =
-				FVector::Dist(PlayerLocation, Enemy->GetActorLocation());
-			if(Distance <= DetectionRange && Enemy->IsActivated())
-			{
-				NearbyEnemies.Add(Enemy);
-			}
-		}
-	}
-}
-
-void AMyCharacter::SortEnemiesByDistance()
-{
-	const FVector PlayerLocation = GetActorLocation();
-
-	NearbyEnemies.Sort(
-		[PlayerLocation](const AMyEnemy &A, const AMyEnemy &B)
-		{
-			const float DistA =
-				FVector::DistSquared(PlayerLocation, A.GetActorLocation());
-			const float DistB =
-				FVector::DistSquared(PlayerLocation, B.GetActorLocation());
-			return DistA < DistB;
-		});
-}
-
-void AMyCharacter::UpdateHealthBarVisibility()
-{
-	// Hide health bars for enemies that are no longer nearby
-	for(AMyEnemy *Enemy : PreviousNearbyEnemies)
-	{
-		if(!NearbyEnemies.Contains(Enemy) && Enemy != CurrentTarget)
-		{
-			Enemy->SetHealthBarVisible(false);
-		}
-	}
-
-	// Show health bars for nearby enemies
-	for(AMyEnemy *Enemy : NearbyEnemies)
-	{
-		if(Enemy != CurrentTarget)
-		{
-			Enemy->SetHealthBarVisible(true);
-		}
-	}
-}
-
-void AMyCharacter::ValidateCurrentTarget()
-{
-	if(CurrentTarget
-		&& (!NearbyEnemies.Contains(CurrentTarget) || CurrentTarget->bIsDead))
-	{
-		ClearTarget();
-
-		// Focus new nearest enemy if available
-		if(NearbyEnemies.Num() > 0)
-		{
-			SetTarget(NearbyEnemies[0]);
-		}
-	}
-}
-
-void AMyCharacter::SetTarget(AMyEnemy *NewTarget)
-{
-	if(CurrentTarget == NewTarget)
-	{
-		return;
-	}
-
-	// Clear current target if different
-	if(CurrentTarget)
-	{
-		ClearTarget();
-	}
-
-	// Set new target
-	CurrentTarget = NewTarget;
-	if(CurrentTarget)
-	{
-		bCameraLocked = true;
-		CurrentTarget->SetFocused(true);
-		CurrentTarget->SetHealthBarVisible(true);
-	}
-	else
-	{
-		bCameraLocked = false;
-	}
-}
-
-void AMyCharacter::ClearTarget()
-{
-	if(CurrentTarget)
-	{
-		AMyEnemy *OldTarget = CurrentTarget;
-		CurrentTarget = nullptr;
-		bCameraLocked = false;
-
-		OldTarget->SetFocused(false);
-		if(!NearbyEnemies.Contains(OldTarget))
-		{
-			OldTarget->SetHealthBarVisible(false);
-		}
-	}
-}
-
 void AMyCharacter::FocusEnemy()
 {
-	if(CurrentTarget)
+	if(EnemyTargetingComponent)
 	{
-		ClearTarget();
-	}
-	else
-	{
-		// Focus nearest enemy
-		if(NearbyEnemies.Num() > 0)
-		{
-			SetTarget(NearbyEnemies[0]);
-		}
+		EnemyTargetingComponent->FocusEnemy();
 	}
 }
 
-void AMyCharacter::CycleTarget()
+void AMyCharacter::CancelAbilityByTag(const FName &AbilityTag)
 {
-	// If no nearby enemies, clear target
-	if(NearbyEnemies.Num() == 0)
+	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
+	if(!ASC)
 	{
-		ClearTarget();
 		return;
 	}
 
-	// Find current target index in nearby enemies
-	int32 CurrentIndex = NearbyEnemies.Find(CurrentTarget);
-	if(CurrentIndex == INDEX_NONE)
-	{
-		// Current target not in nearby enemies, start with first enemy
-		CurrentIndex = 0;
-	}
-
-	// Cycle to next enemy
-	const int32 NextIndex = (CurrentIndex + 1) % NearbyEnemies.Num();
-	AMyEnemy *NewTarget = NearbyEnemies[NextIndex];
-
-	SetTarget(NewTarget);
+	FGameplayTagContainer AbilityTagContainer;
+	AbilityTagContainer.AddTag(FGameplayTag::RequestGameplayTag(AbilityTag));
+	ASC->CancelAbilities(&AbilityTagContainer);
 }
