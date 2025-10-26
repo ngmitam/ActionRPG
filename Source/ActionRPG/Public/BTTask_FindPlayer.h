@@ -36,4 +36,6 @@ private:
 	FVector CurrentTargetLocation;
 	bool bHasTarget;
 	int32 CurrentPatrolIndex = 0;
+	bool bIsRotating = false;
+	float RotationAngle = 0.0f;
 };

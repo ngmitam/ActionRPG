@@ -17,6 +17,8 @@ UBTTask_FindPlayer::UBTTask_FindPlayer()
 	NodeName = "Find Player";
 	bNotifyTick = true;
 	bHasTarget = false;
+	bIsRotating = false;
+	RotationAngle = 0.0f;
 }
 
 EBTNodeResult::Type UBTTask_FindPlayer::ExecuteTask(
@@ -172,6 +174,27 @@ void UBTTask_FindPlayer::TickTask(
 		if(Status == EPathFollowingStatus::Idle)
 		{
 			bHasTarget = false;
+			// Start rotating instead of moving immediately
+			bIsRotating = true;
+			RotationAngle = 0.0f;
+		}
+	}
+	else if(bIsRotating)
+	{
+		// Perform rotation
+		float RotationSpeed = 90.0f; // degrees per second (slower)
+		float DeltaRotation = RotationSpeed * DeltaSeconds;
+		RotationAngle += DeltaRotation;
+
+		// Rotate the enemy
+		FRotator CurrentRotation = AIController->GetPawn()->GetActorRotation();
+		CurrentRotation.Yaw += DeltaRotation;
+		AIController->GetPawn()->SetActorRotation(CurrentRotation);
+
+		// Check if completed full rotation
+		if(RotationAngle >= 360.0f)
+		{
+			bIsRotating = false;
 			StartMovement(AIController, Enemy);
 		}
 	}

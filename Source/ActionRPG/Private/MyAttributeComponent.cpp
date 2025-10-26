@@ -57,6 +57,7 @@ void UMyAttributeComponent::BeginPlay()
 
 void UMyAttributeComponent::DeferredInitialize()
 {
+	// Deferred initialization to ensure proper timing for GAS components
 	if(!ValidateOwner())
 	{
 		return;
@@ -214,28 +215,20 @@ void UMyAttributeComponent::ApplyDefaultAttribute(
 float UMyAttributeComponent::GetDefaultValueForAttribute(
 	const FGameplayAttribute &Attribute) const
 {
-	if(Attribute == AttributeSet->GetHealthAttribute())
-	{
-		return FGameConfig::GetDefault().DefaultHealth;
-	}
-	if(Attribute == AttributeSet->GetMaxHealthAttribute())
-	{
-		return FGameConfig::GetDefault().DefaultMaxHealth;
-	}
-	if(Attribute == AttributeSet->GetStaminaAttribute())
-	{
-		return FGameConfig::GetDefault().DefaultStamina;
-	}
-	if(Attribute == AttributeSet->GetMaxStaminaAttribute())
-	{
-		return FGameConfig::GetDefault().DefaultMaxStamina;
-	}
-	if(Attribute == AttributeSet->GetMaxWalkSpeedAttribute())
-	{
-		return FGameConfig::GetDefault().DefaultMaxWalkSpeed;
-	}
+	static const TMap<FGameplayAttribute, float> DefaultValues = {
+		{AttributeSet->GetHealthAttribute(),
+			FGameConfig::GetDefault().DefaultHealth},
+		{AttributeSet->GetMaxHealthAttribute(),
+			FGameConfig::GetDefault().DefaultMaxHealth},
+		{AttributeSet->GetStaminaAttribute(),
+			FGameConfig::GetDefault().DefaultStamina},
+		{AttributeSet->GetMaxStaminaAttribute(),
+			FGameConfig::GetDefault().DefaultMaxStamina},
+		{AttributeSet->GetMaxWalkSpeedAttribute(),
+			FGameConfig::GetDefault().DefaultMaxWalkSpeed}};
 
-	return 0.0f;
+	const float *Value = DefaultValues.Find(Attribute);
+	return Value ? *Value : 0.0f;
 }
 
 FDefaultAttributes UMyAttributeComponent::GetDefaultAttributes() const
@@ -259,6 +252,7 @@ bool UMyAttributeComponent::CanInitializeAbilitySystem() const
 
 void UMyAttributeComponent::InitializeAbilitySystem()
 {
+	// Initialize the full ability system: attributes, abilities, and delegates
 	if(!CanInitializeAbilitySystem())
 	{
 		return;
@@ -344,35 +338,37 @@ void UMyAttributeComponent::GiveDefaultAbilities()
 		return;
 	}
 
-	for(int32 i = 0; i < DefaultAbilityClasses.Num(); ++i)
+	for(TSubclassOf<UMyGameplayAbility> Ability : DefaultAbilityClasses)
 	{
-		TSubclassOf<UMyGameplayAbility> Ability = DefaultAbilityClasses[i];
-
 		if(!Ability)
 		{
 			continue;
 		}
 
-		// Validate the ability class
-		UMyGameplayAbility *AbilityCDO = Ability.GetDefaultObject();
-		if(!AbilityCDO)
-		{
-			continue;
-		}
-
-		// Validate AbilityInputID
-		int32 InputID = static_cast<int32>(AbilityCDO->AbilityInputID);
-
-		if(InputID < 0)
-		{
-			continue;
-		}
-
-		// Safely give the ability
-		FGameplayAbilitySpec AbilitySpec(Ability, 1, InputID, GetOwner());
-		FGameplayAbilitySpecHandle Handle =
-			AbilitySystemComponent->GiveAbility(AbilitySpec);
+		GiveAbility(Ability);
 	}
+}
+
+void UMyAttributeComponent::GiveAbility(TSubclassOf<UMyGameplayAbility> Ability)
+{
+	// Validate the ability class
+	UMyGameplayAbility *AbilityCDO = Ability.GetDefaultObject();
+	if(!AbilityCDO)
+	{
+		return;
+	}
+
+	// Validate AbilityInputID
+	int32 InputID = static_cast<int32>(AbilityCDO->AbilityInputID);
+	if(InputID < 0)
+	{
+		return;
+	}
+
+	// Safely give the ability
+	FGameplayAbilitySpec AbilitySpec(Ability, 1, InputID, GetOwner());
+	FGameplayAbilitySpecHandle Handle =
+		AbilitySystemComponent->GiveAbility(AbilitySpec);
 }
 
 float UMyAttributeComponent::GetHealth() const

@@ -42,6 +42,7 @@ public:
 	// Initialize attributes and abilities
 	void InitializeAttributes();
 	void GiveDefaultAbilities();
+	void GiveAbility(TSubclassOf<UMyGameplayAbility> Ability);
 	void InitializeAbilitySystem();
 	void DeferredInitialize();
 
