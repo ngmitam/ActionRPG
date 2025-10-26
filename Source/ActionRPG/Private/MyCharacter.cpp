@@ -9,7 +9,6 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "MyAbilityTypes.h"
 #include "MyAttributeComponent.h"
-#include "MyEnemy.h"
 #include "MyPlayerUI.h"
 
 AMyCharacter::AMyCharacter()
@@ -81,22 +80,24 @@ void AMyCharacter::BeginPlay()
 
 void AMyCharacter::InitializePlayerUI()
 {
-	// Create and display the Player Controller
-	if(APlayerController *PlayerController = GetPlayerController())
+	APlayerController *PlayerController = GetPlayerController();
+	if(!PlayerController || !PlayerUIClass)
 	{
-		if(PlayerUIClass)
-		{
-			if(UUserWidget *Widget =
-					CreateWidget<UUserWidget>(PlayerController, PlayerUIClass))
-			{
-				PlayerUIWidget = Cast<UMyPlayerUI>(Widget);
-				if(PlayerUIWidget)
-				{
-					PlayerUIWidget->SetOwningCharacter(this);
-					PlayerUIWidget->AddToViewport();
-				}
-			}
-		}
+		return;
+	}
+
+	UUserWidget *Widget =
+		CreateWidget<UUserWidget>(PlayerController, PlayerUIClass);
+	if(!Widget)
+	{
+		return;
+	}
+
+	PlayerUIWidget = Cast<UMyPlayerUI>(Widget);
+	if(PlayerUIWidget)
+	{
+		PlayerUIWidget->SetOwningCharacter(this);
+		PlayerUIWidget->AddToViewport();
 	}
 }
 
@@ -109,48 +110,44 @@ void AMyCharacter::Tick(float DeltaTime)
 
 void AMyCharacter::Move(const FInputActionValue &Value)
 {
-	if(IsAttacking())
+	if(IsAttacking() || !Controller)
+	{
 		return;
+	}
 
 	FVector2D MovementVector = Value.Get<FVector2D>();
+	const FRotator Rotation = Controller->GetControlRotation();
+	const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-	if(Controller != nullptr)
-	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+	const FVector ForwardDirection =
+		FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	const FVector RightDirection =
+		FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-		const FVector ForwardDirection =
-			FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		const FVector RightDirection =
-			FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-		AddMovementInput(ForwardDirection, MovementVector.Y);
-		AddMovementInput(RightDirection, MovementVector.X);
-	}
+	AddMovementInput(ForwardDirection, MovementVector.Y);
+	AddMovementInput(RightDirection, MovementVector.X);
 }
 
 void AMyCharacter::Look(const FInputActionValue &Value)
 {
-	if(IsAttacking()
-		|| (EnemyTargetingComponent
-			&& EnemyTargetingComponent->GetCurrentTarget()))
+	if(IsAttacking() || !Controller)
+	{
 		return;
+	}
+
+	if(EnemyTargetingComponent && EnemyTargetingComponent->GetCurrentTarget())
+	{
+		return;
+	}
 
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
-
-	if(Controller != nullptr)
-	{
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
-	}
+	AddControllerYawInput(LookAxisVector.X);
+	AddControllerPitchInput(LookAxisVector.Y);
 }
 
 void AMyCharacter::StartSprint()
 {
-	if(!CanPerformAbility())
-		return;
-
-	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
+	UAbilitySystemComponent *ASC = GetAbilitySystemForAbility();
 	if(!ASC)
 	{
 		return;
@@ -163,9 +160,6 @@ void AMyCharacter::StartSprint()
 
 void AMyCharacter::StopSprint()
 {
-	if(!CanPerformAbility())
-		return;
-
 	CancelAbilityByTag(AbilityTags::Sprint);
 	if(AttributeComponent)
 	{
@@ -175,37 +169,38 @@ void AMyCharacter::StopSprint()
 
 void AMyCharacter::Jump()
 {
-	if(!CanPerformAbility())
+	UAbilitySystemComponent *ASC = GetAbilitySystemForAbility();
+	if(!ASC)
+	{
 		return;
+	}
 
 	Super::Jump();
 
-	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
-	if(ASC)
-	{
-		ASC->AbilityLocalInputPressed(
-			static_cast<int32>(EMyAbilityInputID::Jump));
-	}
+	ASC->AbilityLocalInputPressed(static_cast<int32>(EMyAbilityInputID::Jump));
 }
 
 void AMyCharacter::StopJumping()
 {
-	if(!CanPerformAbility())
+	UAbilitySystemComponent *ASC = GetAbilitySystemForAbility();
+	if(!ASC)
+	{
 		return;
+	}
 
 	CancelAbilityByTag(AbilityTags::Jump);
 }
 
 void AMyCharacter::Dodge()
 {
-	if(!CanPerformAbility()
-		|| (AttributeComponent && AttributeComponent->IsDodging()))
+	if(!CanPerformAbility() || !AttributeComponent
+		|| AttributeComponent->IsDodging())
 	{
 		return;
 	}
 
 	UAbilitySystemComponent *ASC = TryGetAbilitySystem();
-	if(!ASC || !AttributeComponent)
+	if(!ASC)
 	{
 		return;
 	}
@@ -295,20 +290,33 @@ void AMyCharacter::HandleDeath()
 
 void AMyCharacter::ResetLevel()
 {
+	if(!GetWorld())
+	{
+		return;
+	}
+
 	// Get current level name
 	FString CurrentLevelName = GetWorld()->GetMapName();
-	// Remove any path prefix if present
-	int32 LastSlashIndex;
-	if(CurrentLevelName.FindLastChar('/', LastSlashIndex))
+
+	// Extract the level name from the full path
+	FString LevelName;
+	if(CurrentLevelName.Split(TEXT("/"), nullptr, &LevelName,
+		   ESearchCase::IgnoreCase, ESearchDir::FromEnd))
 	{
-		CurrentLevelName =
-			CurrentLevelName.Right(CurrentLevelName.Len() - LastSlashIndex - 1);
+		// Remove the .umap extension if present
+		if(LevelName.EndsWith(TEXT(".umap")))
+		{
+			LevelName = LevelName.Left(LevelName.Len() - 5);
+		}
 	}
-	// Remove extension
-	CurrentLevelName = CurrentLevelName.Replace(TEXT(".umap"), TEXT(""));
+	else
+	{
+		// Fallback: if no path separator found, just remove extension
+		LevelName = CurrentLevelName.Replace(TEXT(".umap"), TEXT(""));
+	}
 
 	// Reload the current level
-	UGameplayStatics::OpenLevel(GetWorld(), FName(*CurrentLevelName));
+	UGameplayStatics::OpenLevel(GetWorld(), FName(*LevelName));
 }
 
 bool AMyCharacter::IsAttacking() const

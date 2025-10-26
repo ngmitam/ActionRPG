@@ -92,55 +92,69 @@ void AMyEnemy::MoveTowardsPlayer(float DeltaTime)
 
 void AMyEnemy::AttackPlayer(ACharacter *Player)
 {
-	if(!Player)
+	if(!Player || bIsAttacking)
+	{
 		return;
-
-	// If already attacking, don't start another attack
-	if(bIsAttacking)
-		return;
+	}
 
 	float Distance =
 		FVector::Dist(GetActorLocation(), Player->GetActorLocation());
-	if(Distance <= AttackRange
-		&& GetWorld()->GetTimeSeconds() - LastAttackTime > AttackCooldown)
+	if(Distance > AttackRange
+		|| GetWorld()->GetTimeSeconds() - LastAttackTime <= AttackCooldown)
 	{
-		LastAttackTime = GetWorld()->GetTimeSeconds();
-		bIsAttacking = true;
-
-		// Face the player before attacking
-		FVector Direction = Player->GetActorLocation() - GetActorLocation();
-		Direction.Z =
-			FGameConfig::GetDefault().GroundZCoordinate; // Keep on ground
-		if(!Direction.IsNearlyZero())
-		{
-			FRotator NewRotation = Direction.Rotation();
-			SetActorRotation(NewRotation);
-		}
-
-		// Play attack montage directly from code
-		if(AttackMontage)
-		{
-			USkeletalMeshComponent *SkeletalMesh = GetMesh();
-			if(SkeletalMesh)
-			{
-				UAnimInstance *AnimInstance = SkeletalMesh->GetAnimInstance();
-				if(AnimInstance)
-				{
-					AnimInstance->Montage_Stop(
-						FGameConfig::GetDefault().GroundZCoordinate);
-					// Clear previous binding to avoid multiple calls
-					AnimInstance->OnMontageEnded.RemoveDynamic(
-						this, &AMyEnemy::OnAttackMontageEnded);
-					AnimInstance->Montage_Play(AttackMontage);
-					// Bind to montage end to reset attack state
-					AnimInstance->OnMontageEnded.AddDynamic(
-						this, &AMyEnemy::OnAttackMontageEnded);
-				}
-			}
-		}
-
-		// Damage is applied via animation notify
+		return;
 	}
+
+	LastAttackTime = GetWorld()->GetTimeSeconds();
+	bIsAttacking = true;
+
+	// Face the player before attacking
+	FacePlayer(Player);
+
+	// Play attack montage
+	PlayAttackMontage();
+}
+
+void AMyEnemy::FacePlayer(ACharacter *Player)
+{
+	FVector Direction = Player->GetActorLocation() - GetActorLocation();
+	Direction.Z = FGameConfig::GetDefault().GroundZCoordinate; // Keep on ground
+
+	if(!Direction.IsNearlyZero())
+	{
+		FRotator NewRotation = Direction.Rotation();
+		SetActorRotation(NewRotation);
+	}
+}
+
+void AMyEnemy::PlayAttackMontage()
+{
+	if(!AttackMontage)
+	{
+		return;
+	}
+
+	USkeletalMeshComponent *SkeletalMesh = GetMesh();
+	if(!SkeletalMesh)
+	{
+		return;
+	}
+
+	UAnimInstance *AnimInstance = SkeletalMesh->GetAnimInstance();
+	if(!AnimInstance)
+	{
+		return;
+	}
+
+	// Stop any current montage and clear previous binding
+	AnimInstance->Montage_Stop(FGameConfig::GetDefault().GroundZCoordinate);
+	AnimInstance->OnMontageEnded.RemoveDynamic(
+		this, &AMyEnemy::OnAttackMontageEnded);
+
+	// Play new montage and bind to end event
+	AnimInstance->Montage_Play(AttackMontage);
+	AnimInstance->OnMontageEnded.AddDynamic(
+		this, &AMyEnemy::OnAttackMontageEnded);
 }
 
 void AMyEnemy::ResetAttackState()
@@ -196,16 +210,16 @@ float AMyEnemy::TakeDamage(float DamageAmount, const FDamageEvent &DamageEvent,
 		// Death clears stun
 		SetStunned(false);
 		HandleDeath();
+		return ActualDamage;
 	}
-	else
-	{
-		// Stun when taking damage but not dead
-		SetStunned(true);
-		// Reset stun after duration
-		FTimerHandle StunTimer;
-		GetWorld()->GetTimerManager().SetTimer(
-			StunTimer, [this]() { SetStunned(false); }, StunDuration, false);
-	}
+
+	// Stun when taking damage but not dead
+	SetStunned(true);
+
+	// Reset stun after duration
+	FTimerHandle StunTimer;
+	GetWorld()->GetTimerManager().SetTimer(
+		StunTimer, [this]() { SetStunned(false); }, StunDuration, false);
 
 	return ActualDamage;
 }
@@ -243,11 +257,16 @@ void AMyEnemy::SetFocused(bool bFocused)
 void AMyEnemy::UpdateHealthBar()
 {
 	if(!HealthBarWidget)
+	{
 		return;
+	}
+
 	UUserWidget *Widget = HealthBarWidget->GetUserWidgetObject();
 	if(!Widget)
+	{
 		return;
-	// Assuming the widget has a ProgressBar named "HealthBar"
+	}
+
 	UProgressBar *HealthProgressBar =
 		Cast<UProgressBar>(Widget->GetWidgetFromName(TEXT("HealthBar")));
 	if(!HealthProgressBar)
@@ -266,12 +285,7 @@ void AMyEnemy::UpdateHealthBar()
 	HealthProgressBar->SetPercent(HealthPercent);
 
 	// Set color based on focused state
-	if(bIsFocused)
-	{
-		HealthProgressBar->SetFillColorAndOpacity(FLinearColor::Yellow);
-	}
-	else
-	{
-		HealthProgressBar->SetFillColorAndOpacity(FLinearColor::Red);
-	}
+	FLinearColor BarColor =
+		bIsFocused ? FLinearColor::Yellow : FLinearColor::Red;
+	HealthProgressBar->SetFillColorAndOpacity(BarColor);
 }

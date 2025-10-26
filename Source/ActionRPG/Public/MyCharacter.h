@@ -235,6 +235,16 @@ private:
 	}
 
 	/**
+	 * @brief Get the ability system component safely for ability operations
+	 * @return Pointer to ability system component if valid and character can
+	 * perform abilities, nullptr otherwise
+	 */
+	UAbilitySystemComponent *GetAbilitySystemForAbility() const
+	{
+		return CanPerformAbility() ? TryGetAbilitySystem() : nullptr;
+	}
+
+	/**
 	 * @brief Helper method to cancel abilities by gameplay tag
 	 * @param AbilityTag The gameplay tag of the ability to cancel
 	 */

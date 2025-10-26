@@ -31,25 +31,38 @@ void AMyGameMode::BeginPlay()
 
 void AMyGameMode::SetupMinimapCaptureActor()
 {
-	if(MinimapCaptureActorClass)
+	if(!MinimapCaptureActorClass)
 	{
-		AMinimapCaptureActor *CapturedActor =
-			GetWorld()->SpawnActor<AMinimapCaptureActor>(
-				MinimapCaptureActorClass, FVector(0.0f, 0.0f, 1000.0f),
-				FRotator::ZeroRotator);
-		if(CapturedActor && MinimapRenderTarget)
-		{
-			CapturedActor->SceneCaptureComponent->TextureTarget =
-				MinimapRenderTarget;
-		}
+		return;
+	}
+
+	if(!GetWorld())
+	{
+		return;
+	}
+
+	AMinimapCaptureActor *CapturedActor =
+		GetWorld()->SpawnActor<AMinimapCaptureActor>(MinimapCaptureActorClass,
+			FVector(0.0f, 0.0f, FGameConfig::GetDefault().MinimapCaptureHeight),
+			FRotator::ZeroRotator);
+	if(!CapturedActor)
+	{
+		return;
+	}
+
+	if(MinimapRenderTarget)
+	{
+		CapturedActor->SceneCaptureComponent->TextureTarget =
+			MinimapRenderTarget;
 	}
 }
 
 void AMyGameMode::SetupMinimapTimer()
 {
 	FTimerHandle MinimapTimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(
-		MinimapTimerHandle, this, &AMyGameMode::SetupMinimap, 0.1f, false);
+	GetWorld()->GetTimerManager().SetTimer(MinimapTimerHandle, this,
+		&AMyGameMode::SetupMinimap, FGameConfig::GetDefault().MinimapSetupDelay,
+		false);
 }
 
 void AMyGameMode::InitializeLoadingScreen()
@@ -168,23 +181,25 @@ void AMyGameMode::OnLevelLoaded()
 
 void AMyGameMode::SetupMinimap()
 {
-	// Get Player UI from Character
+	// Get Player Character
 	AMyCharacter *PlayerCharacter =
 		Cast<AMyCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
-	UMyPlayerUI *PlayerUI = nullptr;
-	UMinimapWidget *MinimapWidget = nullptr;
-	if(PlayerCharacter)
+	if(!PlayerCharacter)
 	{
-		PlayerUI = PlayerCharacter->PlayerUIWidget;
+		return;
+	}
+
+	// Get Player UI
+	UMyPlayerUI *PlayerUI = PlayerCharacter->PlayerUIWidget;
+	if(!PlayerUI)
+	{
+		return;
 	}
 
 	// Get Minimap Widget and set render target
-	if(PlayerUI)
+	UMinimapWidget *MinimapWidget = PlayerUI->GetMinimapWidget();
+	if(MinimapWidget && MinimapRenderTarget)
 	{
-		MinimapWidget = PlayerUI->GetMinimapWidget();
-		if(MinimapWidget && MinimapRenderTarget)
-		{
-			MinimapWidget->SetRenderTarget(MinimapRenderTarget);
-		}
+		MinimapWidget->SetRenderTarget(MinimapRenderTarget);
 	}
 }

@@ -36,73 +36,73 @@ void AMyPlayerController::OnPausePressed()
 
 void AMyPlayerController::OnMove(const FInputActionValue &Value)
 {
-	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
+	if(AMyCharacter *MyCharacter = GetControlledCharacter())
 	{
-		ControlledCharacter->Move(Value);
+		MyCharacter->Move(Value);
 	}
 }
 
 void AMyPlayerController::OnLook(const FInputActionValue &Value)
 {
-	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
+	if(AMyCharacter *MyCharacter = GetControlledCharacter())
 	{
-		ControlledCharacter->Look(Value);
+		MyCharacter->Look(Value);
 	}
 }
 
 void AMyPlayerController::OnSprintStarted()
 {
-	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
+	if(AMyCharacter *MyCharacter = GetControlledCharacter())
 	{
-		ControlledCharacter->StartSprint();
+		MyCharacter->StartSprint();
 	}
 }
 
 void AMyPlayerController::OnSprintCompleted()
 {
-	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
+	if(AMyCharacter *MyCharacter = GetControlledCharacter())
 	{
-		ControlledCharacter->StopSprint();
+		MyCharacter->StopSprint();
 	}
 }
 
 void AMyPlayerController::OnJumpStarted()
 {
-	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
+	if(AMyCharacter *MyCharacter = GetControlledCharacter())
 	{
-		ControlledCharacter->Jump();
+		MyCharacter->Jump();
 	}
 }
 
 void AMyPlayerController::OnJumpCompleted()
 {
-	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
+	if(AMyCharacter *MyCharacter = GetControlledCharacter())
 	{
-		ControlledCharacter->StopJumping();
+		MyCharacter->StopJumping();
 	}
 }
 
 void AMyPlayerController::OnDodgeStarted()
 {
-	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
+	if(AMyCharacter *MyCharacter = GetControlledCharacter())
 	{
-		ControlledCharacter->Dodge();
+		MyCharacter->Dodge();
 	}
 }
 
 void AMyPlayerController::OnAttackStarted()
 {
-	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
+	if(AMyCharacter *MyCharacter = GetControlledCharacter())
 	{
-		ControlledCharacter->Attack();
+		MyCharacter->Attack();
 	}
 }
 
 void AMyPlayerController::OnFocusEnemyStarted()
 {
-	if(AMyCharacter *ControlledCharacter = GetControlledCharacter())
+	if(AMyCharacter *MyCharacter = GetControlledCharacter())
 	{
-		ControlledCharacter->FocusEnemy();
+		MyCharacter->FocusEnemy();
 	}
 }
 

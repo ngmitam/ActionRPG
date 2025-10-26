@@ -58,6 +58,12 @@ public:
 	void SetupAttributeChangeDelegates();
 	void SetInitialCharacterMovement();
 
+	// Helper method for applying default attributes
+	void ApplyDefaultAttribute(
+		float Value, const FGameplayAttribute &Attribute);
+	float GetDefaultValueForAttribute(
+		const FGameplayAttribute &Attribute) const;
+
 	// Attribute accessors
 	UFUNCTION(BlueprintPure, Category = "Attributes")
 	float GetHealth() const;

@@ -30,6 +30,10 @@ public:
 	// Attack player if close
 	virtual void AttackPlayer(ACharacter *Player);
 
+	// Helper methods for attack
+	void FacePlayer(ACharacter *Player);
+	void PlayAttackMontage();
+
 	// Reset attack state (called from animation notify)
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void ResetAttackState();

@@ -159,6 +159,13 @@ struct FGameConfig
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	int32 PauseMenuZOrder = 50;
 
+	// Minimap
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Minimap")
+	float MinimapCaptureHeight = 1000.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Minimap")
+	float MinimapSetupDelay = 0.1f;
+
 	// UI Colors
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	FLinearColor HealthColorHigh = FLinearColor::Green;
