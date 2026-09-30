@@ -15,3 +15,9 @@ Saved
 Content/KoreanTraditionalMartialArts
 Content/FreeAnimationLibrary
 Content/UndergroundSciFi
+node_modules/
+.idea/
+.vscode/
+.env
+.env.*
+!.env.example
